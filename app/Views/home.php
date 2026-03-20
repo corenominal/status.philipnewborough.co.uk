@@ -74,12 +74,12 @@
                         <div id="compose-pending-uploads"></div>
 
                         <div class="d-flex gap-2 align-items-center flex-wrap mt-2">
-                            <button type="submit" class="btn btn-primary" id="compose-submit-btn">Post Status</button>
+                            <button type="submit" class="btn btn-primary" id="compose-submit-btn"><i class="bi bi-send me-1" aria-hidden="true"></i>Post</button>
                             <button type="button" class="btn btn-outline-secondary" id="compose-add-video-btn">
-                                <i class="bi bi-paperclip me-1" aria-hidden="true"></i>Add media
+                                <i class="bi bi-paperclip me-1" aria-hidden="true"></i>Media
                             </button>
                             <button type="button" class="btn btn-outline-secondary" id="compose-save-draft-btn">
-                                <i class="bi bi-journal-plus me-1" aria-hidden="true"></i>Save as Draft
+                                <i class="bi bi-journal-plus me-1" aria-hidden="true"></i>Draft
                             </button>
                             <?php if ($mastodonEnabled): ?>
                                 <div class="form-check form-switch ms-1" id="compose-mastodon-wrap">
