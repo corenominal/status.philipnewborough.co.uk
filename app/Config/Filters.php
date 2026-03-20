@@ -28,6 +28,7 @@ class Filters extends BaseFilters
     private const AUTH_EXCEPTIONS = [
         '/',
         'timeline/load',
+        'feed/rss',
         'metrics/receive',
         'cli/*',
         'api/*',

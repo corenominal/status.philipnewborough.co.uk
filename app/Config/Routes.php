@@ -7,6 +7,7 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 $routes->get('/timeline/load', 'Home::loadMoreStatuses');
+$routes->get('/feed/rss', 'Feed::rss');
 
 // Admin routes
 $routes->get('/admin', 'Admin\Home::index');
