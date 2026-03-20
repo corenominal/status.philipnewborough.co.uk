@@ -40,6 +40,56 @@ class MastodonPoster
         return $this->postStatus($content, $mastodonMediaIds);
     }
 
+    /**
+     * Update an existing Mastodon status, re-uploading any attached media.
+     *
+     * @param string $content    Plain-text status content.
+     * @param array  $mediaItems Rows from MediaModel (keys: file_name, mime_type, description).
+     * @throws \RuntimeException on API or cURL failure.
+     */
+    public function update(string $mastodonId, string $content, array $mediaItems = []): void
+    {
+        $mastodonMediaIds = [];
+
+        foreach ($mediaItems as $media) {
+            $mastodonMediaIds[] = $this->uploadMedia($media);
+        }
+
+        $endpoint = rtrim((string) $this->config->url, '/') . '/api/v1/statuses/' . $mastodonId;
+
+        $body = ['status' => $content];
+
+        if (! empty($mastodonMediaIds)) {
+            $body['media_ids'] = array_values($mastodonMediaIds);
+        }
+
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST  => 'PUT',
+            CURLOPT_POSTFIELDS     => json_encode($body),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $this->config->access_token,
+                'Content-Type: application/json',
+                'Accept: application/json',
+            ],
+            CURLOPT_TIMEOUT        => 60,
+        ]);
+
+        $response  = curl_exec($ch);
+        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError !== '') {
+            throw new \RuntimeException('Mastodon status update cURL error: ' . $curlError);
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            throw new \RuntimeException('Mastodon status update failed (' . $httpCode . '): ' . $response);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------

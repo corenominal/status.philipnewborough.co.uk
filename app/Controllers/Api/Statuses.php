@@ -135,6 +135,34 @@ class Statuses extends BaseController
             $statusModel->update($id, $update);
         }
 
+        // Sync to Mastodon if content or media changed and the status has a mastodon_id.
+        $mastodonSyncNeeded = ! empty($status['mastodon_id'])
+            && (isset($update['content']) || isset($update['media_ids']));
+
+        if ($mastodonSyncNeeded) {
+            $mastodon = new MastodonPoster();
+
+            if ($mastodon->isEnabled()) {
+                try {
+                    $finalContent  = $update['content'] ?? $status['content'];
+                    $finalMediaIds = $update['media_ids'] ?? $this->parseMediaIds($status['media_ids'] ?? null);
+                    $mediaItems    = [];
+
+                    if (! empty($finalMediaIds)) {
+                        $mediaModel = new MediaModel();
+                        $mediaItems = $mediaModel->whereIn('id', $finalMediaIds)->findAll();
+                    }
+
+                    $mastodon->update((string) $status['mastodon_id'], $finalContent, $mediaItems);
+                } catch (\Throwable $e) {
+                    log_message('error', 'Failed to update Mastodon status {id}: {message}', [
+                        'id'      => $status['mastodon_id'],
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
         return $this->response->setJSON(['status' => 'success', 'data' => $statusModel->find($id)]);
     }
 
