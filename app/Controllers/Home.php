@@ -2,6 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Models\MediaModel;
+use App\Models\StatusModel;
+use CodeIgniter\HTTP\ResponseInterface;
+
 class Home extends BaseController
 {
     /**
@@ -14,12 +18,135 @@ class Home extends BaseController
      */
     public function index(): string
     {
+        $limit = 20;
+        $query = trim((string) $this->request->getGet('q'));
+        $timelineData = $this->getTimelineBatch(0, $limit, $query);
+        $mastodonProfile = (string) config('Mastodon')->profile;
+        $mastodonHandle =  (string) config('Mastodon')->account;
+
         // Array of javascript files to include
         $data['js'] = ['home'];
         // Array of CSS files to include
         $data['css'] = ['home'];
         // Set the page title
-        $data['title'] = 'Template Home';
+        $data['title'] = 'Status Timeline';
+        $data['statuses'] = $timelineData['statuses'];
+        $data['hasMoreStatuses'] = $timelineData['hasMore'];
+        $data['statusBatchSize'] = $limit;
+        $data['searchQuery'] = $query;
+        $data['mastodonHandle'] = $mastodonHandle;
+        $data['mastodonProfile'] = $mastodonProfile;
+
         return view('home', $data);
+    }
+
+    public function loadMoreStatuses(): ResponseInterface
+    {
+        $offset = max(0, (int) $this->request->getGet('offset'));
+        $limit = (int) $this->request->getGet('limit');
+        $query = trim((string) $this->request->getGet('q'));
+
+        if ($limit <= 0) {
+            $limit = 20;
+        }
+
+        if ($limit > 50) {
+            $limit = 50;
+        }
+
+        $timelineData = $this->getTimelineBatch($offset, $limit, $query);
+
+        $mastodonProfile = (string) config('Mastodon')->profile;
+        $mastodonHandle = (string) config('Mastodon')->account;
+
+        $html = view('home/partials/timeline_items', [
+            'statuses' => $timelineData['statuses'],
+            'mastodonHandle' => $mastodonHandle,
+            'mastodonProfile' => $mastodonProfile,
+        ]);
+
+        return $this->response->setJSON([
+            'statuses' => $timelineData['statuses'],
+            'html' => $html,
+            'nextOffset' => $offset + count($timelineData['statuses']),
+            'hasMore' => $timelineData['hasMore'],
+        ]);
+    }
+
+    /**
+     * @return array{statuses: array<int, array<string, mixed>>, hasMore: bool}
+     */
+    private function getTimelineBatch(int $offset, int $limit, string $query = ''): array
+    {
+        $statusModel = new StatusModel();
+        $mediaModel = new MediaModel();
+
+        if ($query !== '') {
+            $statusModel
+                ->groupStart()
+                ->like('content', $query)
+                ->orLike('content_html', $query)
+                ->groupEnd();
+        }
+
+        $rows = $statusModel
+            ->orderBy('created_at', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->findAll($limit + 1, $offset);
+
+        $hasMore = count($rows) > $limit;
+        $statuses = array_slice($rows, 0, $limit);
+
+        $mediaIds = [];
+
+        foreach ($statuses as $status) {
+            if (! isset($status['media_ids']) || ! is_array($status['media_ids'])) {
+                continue;
+            }
+
+            foreach ($status['media_ids'] as $mediaId) {
+                $id = (int) $mediaId;
+
+                if ($id > 0) {
+                    $mediaIds[] = $id;
+                }
+            }
+        }
+
+        $mediaById = [];
+
+        if ($mediaIds !== []) {
+            $mediaRows = $mediaModel->whereIn('id', array_values(array_unique($mediaIds)))->findAll();
+
+            foreach ($mediaRows as $mediaRow) {
+                $mediaById[(int) $mediaRow['id']] = [
+                    'id' => (int) $mediaRow['id'],
+                    'description' => (string) ($mediaRow['description'] ?? ''),
+                    'url' => '/media/' . ($mediaRow['file_name'] ?? ''),
+                    'mimeType' => (string) ($mediaRow['mime_type'] ?? ''),
+                ];
+            }
+        }
+
+        foreach ($statuses as $index => $status) {
+            $statuses[$index]['media'] = [];
+
+            if (! isset($status['media_ids']) || ! is_array($status['media_ids'])) {
+                continue;
+            }
+
+            foreach ($status['media_ids'] as $mediaId) {
+                $id = (int) $mediaId;
+
+                if (isset($mediaById[$id])) {
+                    $statuses[$index]['media'][] = $mediaById[$id];
+                }
+            }
+        }
+
+        return [
+            'statuses' => $statuses,
+            'hasMore' => $hasMore,
+        ];
     }
 }

@@ -6,6 +6,7 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 $routes->get('/', 'Home::index');
+$routes->get('/timeline/load', 'Home::loadMoreStatuses');
 
 // Admin routes
 $routes->get('/admin', 'Admin\Home::index');
@@ -14,6 +15,16 @@ $routes->post('/admin/delete', 'Admin\Home::delete');
 
 // API routes
 $routes->match(['get', 'options'], '/api/test/ping', 'Api\Test::ping');
+
+// Status CRUD
+$routes->match(['post', 'options'], '/api/statuses', 'Api\Statuses::create');
+$routes->match(['get', 'options'], '/api/statuses/(:num)', 'Api\Statuses::get/$1');
+$routes->match(['patch', 'options'], '/api/statuses/(:num)', 'Api\Statuses::update/$1');
+$routes->match(['delete', 'options'], '/api/statuses/(:num)', 'Api\Statuses::delete/$1');
+
+// Media upload and delete
+$routes->match(['post', 'options'], '/api/media', 'Api\Media::upload');
+$routes->match(['delete', 'options'], '/api/media/(:num)', 'Api\Media::delete/$1');
 
 // Command line routes
 $routes->cli('cli/test/index/(:segment)', 'CLI\Test::index/$1');
