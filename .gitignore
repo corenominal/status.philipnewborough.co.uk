@@ -69,7 +69,7 @@ php_errors.log
 # Media Files
 #-------------------------
 public/media/*
-public/media/.gitkeep
+!public/media/.gitkeep
 
 #-------------------------
 # Import directory
