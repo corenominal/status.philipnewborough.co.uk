@@ -66,6 +66,12 @@ writable/debugbar/*
 php_errors.log
 
 #-------------------------
+# Media Files
+#-------------------------
+public/media/*
+public/media/.gitkeep
+
+#-------------------------
 # Import directory
 #-------------------------
 imports/*
