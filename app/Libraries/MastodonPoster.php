@@ -141,6 +141,40 @@ class MastodonPoster
     }
 
     /**
+     * Delete a status from Mastodon by its Mastodon status ID.
+     *
+     * @throws \RuntimeException on API or cURL failure.
+     */
+    public function delete(string $mastodonId): void
+    {
+        $endpoint = rtrim((string) $this->config->url, '/') . '/api/v1/statuses/' . $mastodonId;
+
+        $ch = curl_init($endpoint);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST  => 'DELETE',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $this->config->access_token,
+                'Accept: application/json',
+            ],
+            CURLOPT_TIMEOUT        => 30,
+        ]);
+
+        $response  = curl_exec($ch);
+        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError !== '') {
+            throw new \RuntimeException('Mastodon status delete cURL error: ' . $curlError);
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            throw new \RuntimeException('Mastodon status delete failed (' . $httpCode . '): ' . $response);
+        }
+    }
+
+    /**
      * Send the status text (and optional Mastodon media IDs) to Mastodon.
      *
      * @param  string[] $mastodonMediaIds

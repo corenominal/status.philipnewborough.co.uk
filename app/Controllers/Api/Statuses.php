@@ -173,6 +173,22 @@ class Statuses extends BaseController
             $mediaModel->whereIn('id', $mediaIds)->delete();
         }
 
+        // Delete from Mastodon if the status was posted there.
+        if (! empty($status['mastodon_id'])) {
+            $mastodon = new MastodonPoster();
+
+            if ($mastodon->isEnabled()) {
+                try {
+                    $mastodon->delete((string) $status['mastodon_id']);
+                } catch (\Throwable $e) {
+                    log_message('error', 'Failed to delete Mastodon status {id}: {message}', [
+                        'id'      => $status['mastodon_id'],
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
         $statusModel->delete($id);
 
         return $this->response->setJSON(['status' => 'success']);
