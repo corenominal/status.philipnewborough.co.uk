@@ -120,9 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	if (timelineItems) {
 		initializeImageShimmer(timelineItems);
-	}
 
-	if (timelineItems && observerTarget && loader) {
 		if (imageModal && imageModalImg && imageModalCapt) {
 			timelineItems.addEventListener('click', (event) => {
 				const clickedImage = event.target.closest('.timeline__media-image');
@@ -149,7 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				imageModalCapt.textContent = '';
 			});
 		}
+	}
 
+	if (timelineItems && observerTarget && loader) {
 		const state = {
 			isLoading: false,
 			offset:    Number(timelineItems.dataset.offset || 0),
