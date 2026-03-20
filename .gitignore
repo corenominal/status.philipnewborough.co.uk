@@ -66,6 +66,11 @@ writable/debugbar/*
 php_errors.log
 
 #-------------------------
+# Import directory
+#-------------------------
+imports/*
+
+#-------------------------
 # User Guide Temp Files
 #-------------------------
 user_guide_src/build/*
