@@ -65,7 +65,7 @@
 
             <footer class="timeline__meta">
                 <time class="timeline__time" datetime="<?= esc((string) ($status['created_at'] ?? '')) ?>">
-                    <?= esc(date('j M Y, H:i', strtotime((string) ($status['created_at'] ?? 'now')))) ?>
+                    <a class="timeline__permalink" href="/status/<?= esc($status['uuid']) ?>"><?= esc(date('j M Y, H:i', strtotime((string) ($status['created_at'] ?? 'now')))) ?></a>
                 </time>
                 <div class="timeline__item-actions d-flex align-items-center gap-1">
                     <?php if (! empty($status['mastodon_url'])): ?>

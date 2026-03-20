@@ -118,6 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	};
 
+	if (timelineItems) {
+		initializeImageShimmer(timelineItems);
+	}
+
 	if (timelineItems && observerTarget && loader) {
 		if (imageModal && imageModalImg && imageModalCapt) {
 			timelineItems.addEventListener('click', (event) => {
@@ -217,10 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		if (!state.hasMore) {
 			setLoaderMessage('You have reached the end of the timeline.', 'is-finished');
-			initializeImageShimmer(timelineItems);
 		} else {
-			initializeImageShimmer(timelineItems);
-
 			const observer = new IntersectionObserver((entries) => {
 				entries.forEach((entry) => {
 					if (entry.isIntersecting) {

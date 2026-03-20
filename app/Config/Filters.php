@@ -27,6 +27,7 @@ class Filters extends BaseFilters
      */
     private const AUTH_EXCEPTIONS = [
         '/',
+        'status/*',
         'timeline/load',
         'feed/rss',
         'metrics/receive',
@@ -41,6 +42,7 @@ class Filters extends BaseFilters
      */
     private const OPTIONAL_AUTH_ROUTES = [
         '/',
+        'status/*',
         'timeline/load',
         'metrics/receive',
     ];

@@ -43,6 +43,59 @@ class Home extends BaseController
         return view('home', $data);
     }
 
+    public function show(string $uuid): string
+    {
+        $statusModel = new StatusModel();
+        $mediaModel  = new MediaModel();
+
+        $status = $statusModel->where('uuid', $uuid)->first();
+
+        if ($status === null) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Status not found.');
+        }
+
+        $mediaById = [];
+
+        if (isset($status['media_ids']) && is_array($status['media_ids']) && $status['media_ids'] !== []) {
+            $mediaRows = $mediaModel
+                ->whereIn('id', array_values(array_unique(array_map('intval', $status['media_ids']))))
+                ->findAll();
+
+            foreach ($mediaRows as $mediaRow) {
+                $mediaById[(int) $mediaRow['id']] = [
+                    'id'          => (int) $mediaRow['id'],
+                    'description' => (string) ($mediaRow['description'] ?? ''),
+                    'url'         => '/media/' . ($mediaRow['file_name'] ?? ''),
+                    'mimeType'    => (string) ($mediaRow['mime_type'] ?? ''),
+                ];
+            }
+        }
+
+        $status['media'] = [];
+
+        if (isset($status['media_ids']) && is_array($status['media_ids'])) {
+            foreach ($status['media_ids'] as $mediaId) {
+                $mid = (int) $mediaId;
+
+                if (isset($mediaById[$mid])) {
+                    $status['media'][] = $mediaById[$mid];
+                }
+            }
+        }
+
+        $mastodonProfile = (string) config('Mastodon')->profile;
+        $mastodonHandle  = (string) config('Mastodon')->account;
+
+        $data['css']             = ['home'];
+        $data['js']              = ['home'];
+        $data['title']           = 'Status';
+        $data['status']          = $status;
+        $data['mastodonHandle']  = $mastodonHandle;
+        $data['mastodonProfile'] = $mastodonProfile;
+
+        return view('status', $data);
+    }
+
     public function loadMoreStatuses(): ResponseInterface
     {
         $offset = max(0, (int) $this->request->getGet('offset'));
