@@ -247,16 +247,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Focus the textarea on page load so the admin can start typing immediately.
 	composeSection.querySelector('#compose-content')?.focus();
-	const composeStatusIdEl  = document.querySelector('#compose-status-id');
-	const composeContentEl   = document.querySelector('#compose-content');
-	const composeTitleEl     = document.querySelector('#compose-form-title');
-	const composeCancelBtn   = document.querySelector('#compose-cancel-btn');
-	const composeSubmitBtn   = document.querySelector('#compose-submit-btn');
-	const composeStatusMsg   = document.querySelector('#compose-status-msg');
-	const composeAddVideoBtn = document.querySelector('#compose-add-video-btn');
-	const composePendingEl   = document.querySelector('#compose-pending-uploads');
-	const composeExistingEl  = document.querySelector('#compose-existing-media');
-	const composeExistingList = document.querySelector('#compose-existing-media-list');
+	const composeStatusIdEl    = document.querySelector('#compose-status-id');
+	const composeContentEl     = document.querySelector('#compose-content');
+	const composeTitleEl       = document.querySelector('#compose-form-title');
+	const composeCancelBtn     = document.querySelector('#compose-cancel-btn');
+	const composeSubmitBtn     = document.querySelector('#compose-submit-btn');
+	const composeStatusMsg     = document.querySelector('#compose-status-msg');
+	const composeAddVideoBtn   = document.querySelector('#compose-add-video-btn');
+	const composePendingEl     = document.querySelector('#compose-pending-uploads');
+	const composeExistingEl    = document.querySelector('#compose-existing-media');
+	const composeExistingList  = document.querySelector('#compose-existing-media-list');
+	const composeMastodonWrap  = document.querySelector('#compose-mastodon-wrap');
+	const composeMastodonSwitch = document.querySelector('#compose-mastodon-switch');
 
 	// Track media state --
 	// pendingUploads: array of { el, file, description } — not yet uploaded
@@ -290,6 +292,14 @@ document.addEventListener('DOMContentLoaded', () => {
 		mediaState.pending  = [];
 		mediaState.existing = [];
 		mediaState.removed.clear();
+
+		if (composeMastodonWrap) {
+			composeMastodonWrap.classList.remove('d-none');
+		}
+
+		if (composeMastodonSwitch) {
+			composeMastodonSwitch.checked = true;
+		}
 	};
 
 	const setComposeLoading = (isLoading) => {
@@ -488,6 +498,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			composeTitleEl.textContent   = 'Edit Status';
 			composeSubmitBtn.textContent = 'Update Status';
 			composeCancelBtn.classList.remove('d-none');
+
+			if (composeMastodonWrap) {
+				composeMastodonWrap.classList.add('d-none');
+			}
 
 			mediaState.existing = mediaItems.map((m) => ({ ...m }));
 			renderExistingMedia(mediaState.existing);
@@ -703,10 +717,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			formData.append('content', content);
 			allMediaIds.forEach((id) => formData.append('media_ids[]', String(id)));
 
+			if (!isEdit && composeMastodonSwitch) {
+				formData.append('post_to_mastodon', composeMastodonSwitch.checked ? '1' : '0');
+			}
+
 			let statusRes;
 
-			if (isEdit) {
-				statusRes = await fetch(`/api/statuses/${statusId}`, {
+			if (isEdit) {				statusRes = await fetch(`/api/statuses/${statusId}`, {
 					method: 'PATCH',
 					headers: {
 						...authHeaders(),

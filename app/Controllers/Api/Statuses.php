@@ -3,6 +3,7 @@
 namespace App\Controllers\Api;
 
 use App\Libraries\Markdown;
+use App\Libraries\MastodonPoster;
 use App\Models\MediaModel;
 use App\Models\StatusModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -49,9 +50,10 @@ class Statuses extends BaseController
             return $this->response->setStatusCode(422)->setJSON(['error' => 'Content is required.']);
         }
 
-        $mediaIds    = $this->parseMediaIds($this->request->getPost('media_ids'));
-        $contentHtml = $this->toHtml($content);
-        $uuid        = Uuid::uuid4()->toString();
+        $mediaIds       = $this->parseMediaIds($this->request->getPost('media_ids'));
+        $postToMastodon = $this->request->getPost('post_to_mastodon') === '1';
+        $contentHtml    = $this->toHtml($content);
+        $uuid           = Uuid::uuid4()->toString();
 
         $statusModel = new StatusModel();
         $statusModel->insert([
@@ -61,7 +63,32 @@ class Statuses extends BaseController
             'media_ids'    => $mediaIds,
         ]);
 
-        $status = $statusModel->find($statusModel->getInsertID());
+        $insertId = $statusModel->getInsertID();
+        $status   = $statusModel->find($insertId);
+
+        if ($postToMastodon) {
+            $mastodon = new MastodonPoster();
+
+            if ($mastodon->isEnabled()) {
+                try {
+                    $mediaItems = [];
+
+                    if (! empty($mediaIds)) {
+                        $mediaModel = new MediaModel();
+                        $mediaItems = $mediaModel->whereIn('id', $mediaIds)->findAll();
+                    }
+
+                    $mastodonData = $mastodon->post($content, $mediaItems);
+                    $statusModel->update($insertId, [
+                        'mastodon_id'  => $mastodonData['mastodon_id'],
+                        'mastodon_url' => $mastodonData['mastodon_url'],
+                    ]);
+                    $status = $statusModel->find($insertId);
+                } catch (\Throwable $e) {
+                    log_message('error', 'MastodonPoster::post failed: ' . $e->getMessage());
+                }
+            }
+        }
 
         return $this->response->setStatusCode(201)->setJSON(['status' => 'success', 'data' => $status]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\MastodonPoster;
 use App\Models\MediaModel;
 use App\Models\StatusModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -23,6 +24,7 @@ class Home extends BaseController
         $timelineData = $this->getTimelineBatch(0, $limit, $query);
         $mastodonProfile = (string) config('Mastodon')->profile;
         $mastodonHandle =  (string) config('Mastodon')->account;
+        $mastodonEnabled = (new MastodonPoster())->isEnabled();
 
         // Array of javascript files to include
         $data['js'] = ['home'];
@@ -36,6 +38,7 @@ class Home extends BaseController
         $data['searchQuery'] = $query;
         $data['mastodonHandle'] = $mastodonHandle;
         $data['mastodonProfile'] = $mastodonProfile;
+        $data['mastodonEnabled'] = $mastodonEnabled;
 
         return view('home', $data);
     }

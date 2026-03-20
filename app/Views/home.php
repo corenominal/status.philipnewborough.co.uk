@@ -61,6 +61,12 @@
                             <button type="button" class="btn btn-outline-secondary" id="compose-add-video-btn">
                                 <i class="bi bi-paperclip me-1" aria-hidden="true"></i>Add media
                             </button>
+                            <?php if ($mastodonEnabled): ?>
+                                <div class="form-check form-switch ms-1" id="compose-mastodon-wrap">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="compose-mastodon-switch" checked>
+                                    <label class="form-check-label text-secondary small" for="compose-mastodon-switch">Post to Mastodon</label>
+                                </div>
+                            <?php endif; ?>
                             <span class="timeline-compose__status ms-auto text-end" id="compose-status-msg" aria-live="polite"></span>
                         </div>
                     </form>
