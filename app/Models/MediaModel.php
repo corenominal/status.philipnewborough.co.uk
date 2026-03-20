@@ -15,7 +15,6 @@ class MediaModel extends Model
     protected $allowedFields = [
         'id',
         'uuid',
-        'url',
         'file_name',
         'description',
         'file_ext',
