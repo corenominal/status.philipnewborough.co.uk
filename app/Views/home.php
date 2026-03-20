@@ -23,7 +23,6 @@
                         </div>
                     </form>
                 </div>
-                <p class="timeline-page__subtitle mb-0">Recent updates, Mastodon style.</p>
             </div>
 
             <?php if (session()->get('is_admin')): ?>
@@ -39,7 +38,7 @@
                     <form class="timeline-compose__form" id="compose-form" novalidate>
                         <input type="hidden" id="compose-status-id" value="0">
                         <div class="mb-3">
-                            <label class="form-label timeline-compose__label" for="compose-content">Status content</label>
+                            <label class="form-label timeline-compose__label d-none" for="compose-content">Status content</label>
                             <textarea
                                 class="form-control timeline-compose__textarea"
                                 id="compose-content"
