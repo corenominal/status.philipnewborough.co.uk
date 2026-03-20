@@ -321,9 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	const setComposeLoading = (isLoading) => {
 		composeSubmitBtn.disabled   = isLoading;
 		composeAddVideoBtn.disabled = isLoading;
-		composeSubmitBtn.textContent = isLoading
+		const label = isLoading
 			? (composeStatusIdEl.value !== '0' ? 'Saving…' : 'Posting…')
 			: (composeStatusIdEl.value !== '0' ? 'Update Status' : 'Post Status');
+		composeSubmitBtn.innerHTML = isLoading
+			? `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>${label}`
+			: label;
 	};
 
 	// ---- existing media items ----
