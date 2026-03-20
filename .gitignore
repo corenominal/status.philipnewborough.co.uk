@@ -75,6 +75,7 @@ public/media/*
 # Import directory
 #-------------------------
 imports/*
+!imports/.gitkeep
 
 #-------------------------
 # User Guide Temp Files
