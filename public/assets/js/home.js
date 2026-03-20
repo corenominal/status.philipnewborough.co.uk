@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		composeStatusIdEl.value    = '0';
 		composeContentEl.value     = '';
 		composeTitleEl.textContent = 'New Status';
-		composeSubmitBtn.textContent = 'Post Status';
+		composeSubmitBtn.innerHTML = '<i class="bi bi-send me-1" aria-hidden="true"></i>Post';
 		composeCancelBtn.classList.add('d-none');
 		setComposeMsg('');
 		composePendingEl.innerHTML = '';
@@ -332,9 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	const setComposeLoading = (isLoading) => {
 		composeSubmitBtn.disabled   = isLoading;
 		composeAddVideoBtn.disabled = isLoading;
+		const isEditMode = composeStatusIdEl.value !== '0';
 		const label = isLoading
-			? (composeStatusIdEl.value !== '0' ? 'Saving…' : 'Posting…')
-			: (composeStatusIdEl.value !== '0' ? 'Update Status' : 'Post Status');
+			? (isEditMode ? 'Saving\u2026' : 'Posting\u2026')
+			: (isEditMode ? '<i class="bi bi-pencil me-1" aria-hidden="true"></i>Update' : '<i class="bi bi-send me-1" aria-hidden="true"></i>Post');
 		composeSubmitBtn.innerHTML = isLoading
 			? `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>${label}`
 			: label;
@@ -527,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			composeContentEl.value       = content;
 			updateCharCount();
 			composeTitleEl.textContent   = 'Edit Status';
-			composeSubmitBtn.textContent = 'Update Status';
+			composeSubmitBtn.innerHTML = '<i class="bi bi-pencil me-1" aria-hidden="true"></i>Update';
 			composeCancelBtn.classList.remove('d-none');
 
 			if (composeMastodonWrap) {
@@ -945,7 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				composeContentEl.value       = draft.content || '';
 				updateCharCount();
 				composeTitleEl.textContent   = 'New Status';
-				composeSubmitBtn.textContent = 'Post Status';
+				composeSubmitBtn.innerHTML = '<i class="bi bi-send me-1" aria-hidden="true"></i>Post';
 
 				if (composeMastodonWrap) {
 					composeMastodonWrap.classList.remove('d-none');
