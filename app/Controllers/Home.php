@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Libraries\MastodonPoster;
+use App\Models\DraftModel;
 use App\Models\MediaModel;
 use App\Models\StatusModel;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -39,6 +40,13 @@ class Home extends BaseController
         $data['mastodonHandle'] = $mastodonHandle;
         $data['mastodonProfile'] = $mastodonProfile;
         $data['mastodonEnabled'] = $mastodonEnabled;
+
+        $data['draftCount'] = 0;
+
+        if (session()->get('is_admin')) {
+            $draftModel = new DraftModel();
+            $data['draftCount'] = $draftModel->countAllResults();
+        }
 
         return view('home', $data);
     }

@@ -29,14 +29,28 @@
                 <section class="timeline-compose mb-4" aria-label="Create or edit status" id="timeline-compose">
                     <header class="timeline-compose__header d-flex align-items-center justify-content-between mb-3">
                         <h2 class="timeline-compose__title mb-0" id="compose-form-title">New Status</h2>
-                        <button
-                            type="button"
-                            class="btn btn-sm btn-outline-secondary d-none"
-                            id="compose-cancel-btn"
-                        >Cancel edit</button>
+                        <div class="d-flex align-items-center gap-2">
+                            <?php if ($draftCount > 0): ?>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                id="drafts-btn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#drafts-modal"
+                            >
+                                <i class="bi bi-journal-text me-1" aria-hidden="true"></i>Drafts <span class="badge text-bg-secondary ms-1" id="drafts-count-badge"><?= (int) $draftCount ?></span>
+                            </button>
+                            <?php endif; ?>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary d-none"
+                                id="compose-cancel-btn"
+                            >Cancel edit</button>
+                        </div>
                     </header>
                     <form class="timeline-compose__form" id="compose-form" novalidate>
                         <input type="hidden" id="compose-status-id" value="0">
+                        <input type="hidden" id="compose-draft-id" value="0">
                         <div class="mb-3">
                             <label class="form-label timeline-compose__label d-none" for="compose-content">Status content</label>
                             <textarea
@@ -63,6 +77,9 @@
                             <button type="submit" class="btn btn-primary" id="compose-submit-btn">Post Status</button>
                             <button type="button" class="btn btn-outline-secondary" id="compose-add-video-btn">
                                 <i class="bi bi-paperclip me-1" aria-hidden="true"></i>Add media
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="compose-save-draft-btn">
+                                <i class="bi bi-journal-plus me-1" aria-hidden="true"></i>Save as Draft
                             </button>
                             <?php if ($mastodonEnabled): ?>
                                 <div class="form-check form-switch ms-1" id="compose-mastodon-wrap">
@@ -127,6 +144,22 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-danger" id="delete-status-confirm-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="drafts-modal" tabindex="-1" aria-labelledby="drafts-modal-label" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="drafts-modal-label">
+                                <i class="bi bi-journal-text me-2" aria-hidden="true"></i>Drafts
+                            </h2>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="drafts-modal-body">
+                            <p class="text-secondary">Loading drafts&hellip;</p>
                         </div>
                     </div>
                 </div>

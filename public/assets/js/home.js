@@ -310,12 +310,22 @@ document.addEventListener('DOMContentLoaded', () => {
 		mediaState.removed.clear();
 		updateCharCount();
 
+		const draftIdEl = document.querySelector('#compose-draft-id');
+
+		if (draftIdEl) {
+			draftIdEl.value = '0';
+		}
+
 		if (composeMastodonWrap) {
 			composeMastodonWrap.classList.remove('d-none');
 		}
 
 		if (composeMastodonSwitch) {
 			composeMastodonSwitch.checked = true;
+		}
+
+		if (saveDraftBtn) {
+			saveDraftBtn.classList.remove('d-none');
 		}
 	};
 
@@ -522,6 +532,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			if (composeMastodonWrap) {
 				composeMastodonWrap.classList.add('d-none');
+			}
+
+			if (saveDraftBtn) {
+				saveDraftBtn.classList.add('d-none');
 			}
 
 			mediaState.existing = mediaItems.map((m) => ({ ...m }));
@@ -794,4 +808,339 @@ document.addEventListener('DOMContentLoaded', () => {
 			setComposeLoading(false);
 		}
 	});
+
+	// -------------------------------------------------------------------------
+	// Drafts
+	// -------------------------------------------------------------------------
+
+	const composeDraftIdEl  = document.querySelector('#compose-draft-id');
+	const saveDraftBtn      = document.querySelector('#compose-save-draft-btn');
+	const draftsModalEl     = document.querySelector('#drafts-modal');
+	const draftsModalBody   = document.querySelector('#drafts-modal-body');
+	const draftsCountBadge  = document.querySelector('#drafts-count-badge');
+	const draftsModal       = draftsModalEl && window.bootstrap
+		? window.bootstrap.Modal.getOrCreateInstance(draftsModalEl)
+		: null;
+
+	/**
+	 * Update the drafts button badge count. Hides the button when count reaches 0.
+	 * @param {number} count
+	 */
+	const updateDraftsBadge = (count) => {
+		// Always query live so we pick up dynamically injected elements.
+		const draftsBtn   = document.querySelector('#drafts-btn');
+		const countBadge  = document.querySelector('#drafts-count-badge');
+
+		if (draftsBtn) {
+			if (count <= 0) {
+				draftsBtn.remove();
+			} else if (countBadge) {
+				countBadge.textContent = String(count);
+			}
+
+			return;
+		}
+
+		// Button doesn't exist yet — inject it if we now have drafts.
+		if (count > 0) {
+			const header = document.querySelector('.timeline-compose__header .d-flex');
+
+			if (header) {
+				const btn = document.createElement('button');
+				btn.type             = 'button';
+				btn.className        = 'btn btn-sm btn-outline-secondary';
+				btn.id               = 'drafts-btn';
+				btn.dataset.bsToggle = 'modal';
+				btn.dataset.bsTarget = '#drafts-modal';
+				btn.innerHTML        = '<i class="bi bi-journal-text me-1" aria-hidden="true"></i>Drafts <span class="badge text-bg-secondary ms-1" id="drafts-count-badge">' + count + '</span>';
+				const cancelBtn = header.querySelector('#compose-cancel-btn');
+				header.insertBefore(btn, cancelBtn);
+			}
+		}
+	};
+
+	/**
+	 * Render the list of drafts inside the modal body.
+	 * @param {Array} drafts
+	 */
+	const renderDraftsList = (drafts) => {
+		if (!draftsModalBody) {
+			return;
+		}
+
+		if (drafts.length === 0) {
+			draftsModalBody.innerHTML = '<p class="text-secondary mb-0">You have no saved drafts.</p>';
+			return;
+		}
+
+		const list = document.createElement('ul');
+		list.className = 'list-group list-group-flush';
+
+		drafts.forEach((draft) => {
+			const item = document.createElement('li');
+			item.className     = 'list-group-item px-0';
+			item.dataset.draftId = String(draft.id);
+
+			const preview = draft.content
+				? draft.content.substring(0, 120) + (draft.content.length > 120 ? '\u2026' : '')
+				: '<em class="text-secondary">Empty draft</em>';
+
+			const mediaNote = draft.media && draft.media.length > 0
+				? `<span class="badge text-bg-secondary ms-1">${draft.media.length} media</span>`
+				: '';
+
+			item.innerHTML = `
+				<div class="d-flex align-items-start gap-3">
+					<div class="flex-grow-1 small">
+						<span class="drafts-modal__preview">${preview}</span>${mediaNote}
+					</div>
+					<div class="d-flex gap-2 flex-shrink-0">
+						<button type="button" class="btn btn-sm btn-outline-primary drafts-modal__edit-btn" data-draft-id="${draft.id}">Edit</button>
+						<button type="button" class="btn btn-sm btn-outline-danger drafts-modal__delete-btn" data-draft-id="${draft.id}">Delete</button>
+					</div>
+				</div>`;
+
+			list.appendChild(item);
+		});
+
+		draftsModalBody.innerHTML = '';
+		draftsModalBody.appendChild(list);
+
+		// Wire up edit buttons
+		list.querySelectorAll('.drafts-modal__edit-btn').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const draftId = parseInt(btn.dataset.draftId, 10);
+				const draft   = drafts.find((d) => Number(d.id) === draftId);
+
+				if (!draft) {
+					return;
+				}
+
+				btn.disabled = true;
+
+				// Delete the draft before moving it to the editor.
+				try {
+					const response = await fetch(`/api/drafts/${draftId}`, {
+						method: 'DELETE',
+						headers: { ...authHeaders(), Accept: 'application/json' },
+					});
+
+					if (!response.ok) {
+						const body = await response.json().catch(() => ({}));
+						throw new Error(body.error || `Delete failed (${response.status})`);
+					}
+				} catch (error) {
+					btn.disabled = false;
+					// eslint-disable-next-line no-alert
+					alert(`Could not load draft into editor: ${error.message}`);
+					return;
+				}
+
+				// Update badge count
+				const remaining = drafts.filter((d) => Number(d.id) !== draftId).length;
+				updateDraftsBadge(remaining);
+
+				// Load draft content into compose form
+				resetCompose();
+				composeContentEl.value       = draft.content || '';
+				updateCharCount();
+				composeTitleEl.textContent   = 'New Status';
+				composeSubmitBtn.textContent = 'Post Status';
+
+				if (composeMastodonWrap) {
+					composeMastodonWrap.classList.remove('d-none');
+				}
+
+				if (draft.media && draft.media.length > 0) {
+					mediaState.existing = draft.media.map((m) => ({ ...m }));
+					renderExistingMedia(mediaState.existing);
+				}
+
+				draftsFocusOnClose = true;
+				draftsModal.hide();
+			});
+		});
+
+		// Wire up delete buttons
+		list.querySelectorAll('.drafts-modal__delete-btn').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const draftId = parseInt(btn.dataset.draftId, 10);
+				btn.disabled  = true;
+
+				try {
+					const response = await fetch(`/api/drafts/${draftId}`, {
+						method: 'DELETE',
+						headers: { ...authHeaders(), Accept: 'application/json' },
+					});
+
+					if (!response.ok) {
+						const body = await response.json().catch(() => ({}));
+						throw new Error(body.error || `Delete failed (${response.status})`);
+					}
+
+					// Remove from list
+					const item = list.querySelector(`[data-draft-id="${draftId}"]`);
+
+					if (item) {
+						item.closest('li').remove();
+					}
+
+					const remaining = list.querySelectorAll('li').length;
+					updateDraftsBadge(remaining);
+
+					if (remaining === 0) {
+						draftsModalBody.innerHTML = '<p class="text-secondary mb-0">You have no saved drafts.</p>';
+					}
+				} catch (error) {
+					btn.disabled = false;
+					// eslint-disable-next-line no-alert
+					alert(`Could not delete draft: ${error.message}`);
+				}
+			});
+		});
+	};
+
+	// Focus compose textarea after modal fully closes (when triggered by Edit)
+	let draftsFocusOnClose = false;
+
+	if (draftsModalEl) {
+		draftsModalEl.addEventListener('hidden.bs.modal', () => {
+			if (draftsFocusOnClose) {
+				draftsFocusOnClose = false;
+				composeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				composeContentEl.focus();
+			}
+		});
+	}
+
+	// Load drafts when modal opens
+	if (draftsModalEl) {
+		draftsModalEl.addEventListener('show.bs.modal', async () => {
+			if (draftsModalBody) {
+				draftsModalBody.innerHTML = '<p class="text-secondary">Loading drafts&hellip;</p>';
+			}
+
+			try {
+				const response = await fetch('/api/drafts', {
+					method: 'GET',
+					headers: { ...authHeaders(), Accept: 'application/json' },
+				});
+
+				if (!response.ok) {
+					throw new Error(`Request failed (${response.status})`);
+				}
+
+				const payload = await response.json();
+				renderDraftsList(payload.data || []);
+			} catch (error) {
+				if (draftsModalBody) {
+					draftsModalBody.innerHTML = '<p class="text-danger mb-0">Could not load drafts. Please try again.</p>';
+				}
+
+				// eslint-disable-next-line no-console
+				console.error(error);
+			}
+		});
+	}
+
+	// Save as Draft button
+	if (saveDraftBtn) {
+		saveDraftBtn.addEventListener('click', async () => {
+			const content  = composeContentEl.value.trim();
+			const draftId  = composeDraftIdEl ? parseInt(composeDraftIdEl.value, 10) : 0;
+
+			saveDraftBtn.disabled = true;
+			setComposeMsg('Saving draft…', 'info');
+
+			try {
+				// Upload any pending media first (same logic as post submit)
+				const newMediaIds = [];
+
+				for (const entry of mediaState.pending) {
+					if (!entry.file) {
+						continue;
+					}
+
+					const formData = new FormData();
+					formData.append('file', entry.file);
+					formData.append('description', entry.descInput.value.trim() || 'Draft media');
+
+					const mediaRes = await fetch('/api/media', {
+						method: 'POST',
+						headers: { ...authHeaders(), Accept: 'application/json' },
+						body: formData,
+					});
+
+					if (!mediaRes.ok) {
+						const body = await mediaRes.json().catch(() => ({}));
+						throw new Error(body.error || `Media upload failed (${mediaRes.status})`);
+					}
+
+					const mediaData = await mediaRes.json();
+					newMediaIds.push(mediaData.data.id);
+				}
+
+				const keptIds     = mediaState.existing
+					.filter((m) => !mediaState.removed.has(m.id))
+					.map((m) => m.id);
+				const allMediaIds = [...keptIds, ...newMediaIds];
+
+				const formData = new FormData();
+				formData.append('content', content);
+				allMediaIds.forEach((id) => formData.append('media_ids[]', String(id)));
+
+				let draftRes;
+
+				if (draftId > 0) {
+					// Update existing draft
+					draftRes = await fetch(`/api/drafts/${draftId}`, {
+						method: 'PATCH',
+						headers: { ...authHeaders(), Accept: 'application/json', 'Content-Type': 'application/json' },
+						body: JSON.stringify({ content, media_ids: allMediaIds }),
+					});
+				} else {
+					draftRes = await fetch('/api/drafts', {
+						method: 'POST',
+						headers: { ...authHeaders(), Accept: 'application/json' },
+						body: formData,
+					});
+				}
+
+				if (!draftRes.ok) {
+					const body = await draftRes.json().catch(() => ({}));
+					throw new Error(body.error || `Draft save failed (${draftRes.status})`);
+				}
+
+				const draftPayload = await draftRes.json();
+
+				// Update the draft ID so subsequent saves update rather than create
+				if (composeDraftIdEl) {
+					composeDraftIdEl.value = String(draftPayload.data.id);
+				}
+
+				// Update badge count — fetch current count
+				const listRes = await fetch('/api/drafts', {
+					method: 'GET',
+					headers: { ...authHeaders(), Accept: 'application/json' },
+				});
+
+				if (listRes.ok) {
+					const listPayload = await listRes.json();
+					updateDraftsBadge((listPayload.data || []).length);
+				}
+
+				setComposeMsg('Draft saved.', 'success');
+				resetCompose();
+			} catch (error) {
+				setComposeMsg(error.message, 'error');
+				// eslint-disable-next-line no-console
+				console.error(error);
+			} finally {
+				saveDraftBtn.disabled = false;
+			}
+		});
+	}
+
+	// When a draft is loaded into the compose form and then posted, the draft
+	// is deleted inline within the form submit handler above.
 });

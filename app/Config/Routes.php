@@ -26,6 +26,12 @@ $routes->match(['delete', 'options'], '/api/statuses/(:num)', 'Api\Statuses::del
 $routes->match(['post', 'options'], '/api/media', 'Api\Media::upload');
 $routes->match(['delete', 'options'], '/api/media/(:num)', 'Api\Media::delete/$1');
 
+// Drafts CRUD
+$routes->match(['get', 'options'], '/api/drafts', 'Api\Drafts::index');
+$routes->match(['post', 'options'], '/api/drafts', 'Api\Drafts::create');
+$routes->match(['patch', 'options'], '/api/drafts/(:num)', 'Api\Drafts::update/$1');
+$routes->match(['delete', 'options'], '/api/drafts/(:num)', 'Api\Drafts::delete/$1');
+
 // Command line routes
 $routes->cli('cli/test/index/(:segment)', 'CLI\Test::index/$1');
 $routes->cli('cli/test/count', 'CLI\Test::count');
