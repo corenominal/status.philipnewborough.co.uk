@@ -2,90 +2,91 @@
 
 namespace App\Controllers\Admin;
 
-use Hermawan\DataTables\DataTable;
-use App\Models\ExampleModel;
+use App\Models\StatusModel;
+use App\Models\MediaModel;
 
 class Home extends BaseController
 {
-    /**
-     * Display the Admin Dashboard page.
-     *
-     * Prepares view data for the dashboard, including:
-     * - Datatables feature flag
-     * - JavaScript asset list
-     * - CSS asset list
-     * - Page title
-     *
-     * @return string Rendered admin dashboard view output.
-     */
-    public function index()
+    public function index(): string
     {
-        // Datatables flag
-        $data['datatables'] = true;
-        // Array of javascript files to include
-        $data['js'] = ['admin/home'];
-        // Array of CSS files to include
-        $data['css'] = ['admin/home'];
-        // Set the page title
-        $data['title'] = 'Admin Dashboard';    
-        return view('admin/home', $data);
-    }
+        $statusModel = new StatusModel();
+        $mediaModel  = new MediaModel();
+        $db          = \Config\Database::connect();
 
-    /**
-     * Server-side DataTables endpoint for the example table.
-     *
-     * @return \CodeIgniter\HTTP\ResponseInterface JSON response for DataTables.
-     */
-    public function datatable()
-    {
-        $model   = new ExampleModel();
-        $builder = $model->builder()->where('deleted_at IS NULL');
+        // Headline stat counts
+        $totalStatuses     = $statusModel->countAllResults();
+        $statusesWithMedia = $statusModel->where("media_ids != '[]'")->countAllResults();
+        $textOnly          = $totalStatuses - $statusesWithMedia;
+        $mastodonSynced    = $statusModel->where("mastodon_id != ''")->countAllResults();
+        $replies           = $statusModel->where("in_reply_to_id != ''")->countAllResults();
+        $totalMedia        = $mediaModel->countAllResults();
 
-        $statusFilter = $this->request->getGet('status_filter');
-        if (!empty($statusFilter)) {
-            $builder->where('status', $statusFilter);
+        // Date-range stats
+        $monthStart     = date('Y-m-01');
+        $nextMonthStart = date('Y-m-01', strtotime('+1 month'));
+        $yearStart      = date('Y-01-01');
+        $nextYearStart  = date('Y-01-01', strtotime('+1 year'));
+
+        $thisMonth = $statusModel
+            ->where('created_at >=', $monthStart)
+            ->where('created_at <', $nextMonthStart)
+            ->countAllResults();
+
+        $thisYear = $statusModel
+            ->where('created_at >=', $yearStart)
+            ->where('created_at <', $nextYearStart)
+            ->countAllResults();
+
+        // Monthly activity — last 12 months (current month + 11 prior)
+        $monthlyData = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $monthlyData[date('Y-m', strtotime("-{$i} months"))] = 0;
         }
 
-        $statusMap = [
-            'Active'   => 'success',
-            'Inactive' => 'warning',
-            'Banned'   => 'danger',
-        ];
+        $activityRows = $db->query(
+            "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS cnt
+             FROM statuses
+             WHERE deleted_at IS NULL
+               AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+             GROUP BY month
+             ORDER BY month ASC"
+        )->getResultArray();
 
-        return DataTable::of($builder)
-            ->edit('status', function($row) use ($statusMap) {
-                $colour = $statusMap[$row->status] ?? 'secondary';
-                return '<span class="badge text-bg-' . $colour . '">' . esc($row->status) . '</span>';
-            })
-            ->toJson(true);
-    }
-
-    /**
-     * Delete selected records (soft delete).
-     *
-     * @return \CodeIgniter\HTTP\ResponseInterface
-     */
-    public function delete()
-    {
-        $json = $this->request->getJSON(true);
-        $ids  = $json['ids'] ?? [];
-
-        // Sanitise: keep only positive integers
-        $ids = array_values(array_filter(array_map('intval', $ids), fn($id) => $id > 0));
-
-        if (empty($ids)) {
-            return $this->response->setStatusCode(400)->setJSON([
-                'status'  => 'error',
-                'message' => 'No valid IDs provided.',
-            ]);
+        foreach ($activityRows as $row) {
+            if (array_key_exists($row['month'], $monthlyData)) {
+                $monthlyData[$row['month']] = (int) $row['cnt'];
+            }
         }
 
-        $model = new ExampleModel();
-        $model->whereIn('id', $ids)->delete();
+        $maxMonthly = max(array_values($monthlyData)) ?: 1;
 
-        return $this->response->setJSON([
-            'status'  => 'success',
-            'deleted' => count($ids),
+        // Media breakdown by file extension
+        $mediaByType = $db->query(
+            'SELECT file_ext, COUNT(*) AS cnt FROM media GROUP BY file_ext ORDER BY cnt DESC LIMIT 8'
+        )->getResultArray();
+
+        $totalMediaForPct = array_sum(array_column($mediaByType, 'cnt')) ?: 1;
+
+        // Five most recent statuses
+        $recentStatuses = $statusModel->orderBy('created_at', 'DESC')->limit(5)->findAll();
+
+        return view('admin/home', [
+            'title'             => 'Admin Dashboard',
+            'js'                => ['admin/home'],
+            'css'               => ['admin/home'],
+            'totalStatuses'     => $totalStatuses,
+            'statusesWithMedia' => $statusesWithMedia,
+            'textOnly'          => $textOnly,
+            'mastodonSynced'    => $mastodonSynced,
+            'replies'           => $replies,
+            'totalMedia'        => $totalMedia,
+            'thisMonth'         => $thisMonth,
+            'thisYear'          => $thisYear,
+            'monthlyData'       => $monthlyData,
+            'maxMonthly'        => $maxMonthly,
+            'mediaByType'       => $mediaByType,
+            'totalMediaForPct'  => $totalMediaForPct,
+            'recentStatuses'    => $recentStatuses,
         ]);
     }
 }
