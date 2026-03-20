@@ -259,6 +259,21 @@ document.addEventListener('DOMContentLoaded', () => {
 	const composeExistingList  = document.querySelector('#compose-existing-media-list');
 	const composeMastodonWrap  = document.querySelector('#compose-mastodon-wrap');
 	const composeMastodonSwitch = document.querySelector('#compose-mastodon-switch');
+	const composeCharCount     = document.querySelector('#compose-char-count');
+
+	const CHAR_LIMIT = 500;
+
+	const updateCharCount = () => {
+		const remaining = CHAR_LIMIT - composeContentEl.value.length;
+		if (composeCharCount) {
+			composeCharCount.textContent = remaining;
+			composeCharCount.classList.toggle('text-danger', remaining < 0);
+			composeCharCount.classList.toggle('text-warning', remaining >= 0 && remaining <= 50);
+			composeCharCount.classList.toggle('text-secondary', remaining > 50);
+		}
+	};
+
+	composeContentEl.addEventListener('input', updateCharCount);
 
 	// Track media state --
 	// pendingUploads: array of { el, file, description } — not yet uploaded
@@ -292,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		mediaState.pending  = [];
 		mediaState.existing = [];
 		mediaState.removed.clear();
+		updateCharCount();
 
 		if (composeMastodonWrap) {
 			composeMastodonWrap.classList.remove('d-none');
@@ -495,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			composeStatusIdEl.value      = statusId;
 			composeContentEl.value       = content;
+			updateCharCount();
 			composeTitleEl.textContent   = 'Edit Status';
 			composeSubmitBtn.textContent = 'Update Status';
 			composeCancelBtn.classList.remove('d-none');
@@ -586,6 +603,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		if (content === '') {
 			setComposeMsg('Status content is required.', 'error');
+			composeContentEl.focus();
+			return;
+		}
+
+		if (content.length > CHAR_LIMIT) {
+			setComposeMsg(`Status must be ${CHAR_LIMIT} characters or fewer.`, 'error');
 			composeContentEl.focus();
 			return;
 		}

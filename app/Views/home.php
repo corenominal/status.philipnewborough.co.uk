@@ -46,7 +46,11 @@
                                 name="content"
                                 rows="4"
                                 placeholder="What's happening?"
+                                maxlength="500"
                             ></textarea>
+                            <div class="d-flex justify-content-end mt-1">
+                                <span id="compose-char-count" class="small text-secondary">500</span>
+                            </div>
                         </div>
 
                         <div class="timeline-compose__existing-media d-none mb-3" id="compose-existing-media">
