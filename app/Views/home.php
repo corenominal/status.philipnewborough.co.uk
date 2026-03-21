@@ -26,6 +26,7 @@
                 <nav class="timeline-page__subnav" aria-label="Section navigation">
                     <a class="btn btn-sm btn-outline-primary active" href="<?= site_url() ?>"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> Timeline</a>
                     <a class="btn btn-sm btn-outline-primary" href="<?= site_url('gallery') ?>"><i class="bi bi-images me-1" aria-hidden="true"></i> Gallery</a>
+                    <a class="btn btn-sm btn-outline-primary" href="<?= site_url('about') ?>"><i class="bi bi-info-circle me-1" aria-hidden="true"></i> About</a>
                 </nav>
             </div>
 

@@ -10,6 +10,7 @@ $routes->get('/status/(:segment)', 'Home::show/$1');
 $routes->get('/timeline/load', 'Home::loadMoreStatuses');
 $routes->get('/feed/rss', 'Feed::rss');
 $routes->get('/gallery', 'Gallery::index');
+$routes->get('/about', 'About::index');
 
 // Admin routes
 $routes->get('/admin', 'Admin\Home::index');
