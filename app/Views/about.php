@@ -16,7 +16,7 @@
 
             <div class="about-page__content mt-4">
                 <div class="row g-4">
-                    <div class="col-12 col-md-8">
+                    <div class="col-12">
                         <div class="about-page__card">
                             <h2 class="h5 mb-3">What is this?</h2>
                             <p>This is the personal status timeline of <strong><?= esc(config('Personal')->name) ?></strong>. It's a space for short-form posts - thoughts, links, images, and other snippets shared as they happen.</p>
