@@ -235,13 +235,80 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// -------------------------------------------------------------------------
+	// Delete button — modal init (shared: home page + permalink page)
+	// -------------------------------------------------------------------------
+
+	const deleteModalEl    = document.querySelector('#delete-status-modal');
+	const deleteConfirmBtn = document.querySelector('#delete-status-confirm-btn');
+	const deleteModal      = deleteModalEl && window.bootstrap
+		? window.bootstrap.Modal.getOrCreateInstance(deleteModalEl)
+		: null;
+
+	let pendingDeleteId = null;
+
+	if (timelineItems && deleteModal) {
+		timelineItems.addEventListener('click', (event) => {
+			const deleteBtn = event.target.closest('.timeline__delete-btn');
+
+			if (!deleteBtn) {
+				return;
+			}
+
+			pendingDeleteId = parseInt(deleteBtn.dataset.statusId, 10);
+			deleteModal.show();
+		});
+	}
+
+	// -------------------------------------------------------------------------
 	// Compose / edit form (admin only)
 	// -------------------------------------------------------------------------
 
-	const composeSection     = document.querySelector('#timeline-compose');
+	const composeSection = document.querySelector('#timeline-compose');
 
 	if (!composeSection) {
-		return; // Not admin, nothing more to wire up.
+		// Permalink page: wire up edit redirect and delete confirm without compose form.
+		if (timelineItems) {
+			timelineItems.addEventListener('click', (event) => {
+				const editBtn = event.target.closest('.timeline__edit-btn');
+
+				if (!editBtn) {
+					return;
+				}
+
+				window.location.href = `/?edit_id=${editBtn.dataset.statusId}`;
+			});
+		}
+
+		if (deleteConfirmBtn && deleteModal) {
+			deleteConfirmBtn.addEventListener('click', async () => {
+				if (!pendingDeleteId) {
+					return;
+				}
+
+				const id = pendingDeleteId;
+				pendingDeleteId = null;
+				deleteModal.hide();
+
+				try {
+					const response = await fetch(`/api/statuses/${id}`, {
+						method: 'DELETE',
+						headers: { ...authHeaders(), Accept: 'application/json' },
+					});
+
+					if (!response.ok) {
+						const body = await response.json().catch(() => ({}));
+						throw new Error(body.error || `Delete failed (${response.status})`);
+					}
+
+					window.location.href = '/';
+				} catch (error) {
+					// eslint-disable-next-line no-alert
+					alert(`Could not delete status: ${error.message}`);
+				}
+			});
+		}
+
+		return;
 	}
 
 	const composeForm        = document.querySelector('#compose-form');
@@ -497,6 +564,47 @@ document.addEventListener('DOMContentLoaded', () => {
 		composePendingEl.appendChild(buildPendingUploadItem());
 	});
 
+	// ---- auto-trigger edit from URL param (?edit_id=N) ----
+
+	const editIdParam = new URLSearchParams(window.location.search).get('edit_id');
+
+	if (editIdParam) {
+		history.replaceState(null, '', window.location.pathname);
+
+		(async () => {
+			try {
+				const response = await fetch(`/api/statuses/${encodeURIComponent(editIdParam)}`, {
+					headers: { ...authHeaders(), Accept: 'application/json' },
+				});
+
+				if (!response.ok) {
+					return;
+				}
+
+				const { data } = await response.json();
+
+				resetCompose();
+				composeStatusIdEl.value    = String(data.id);
+				composeContentEl.value     = data.content || '';
+				updateCharCount();
+				composeTitleEl.textContent = 'Edit Status';
+				composeSubmitBtn.innerHTML = '<i class="bi bi-pencil me-1" aria-hidden="true"></i>Update';
+				composeCancelBtn.classList.remove('d-none');
+
+				if (composeMastodonWrap) {
+					composeMastodonWrap.classList.add('d-none');
+				}
+
+				mediaState.existing = (data.media || []).map((m) => ({ ...m }));
+				renderExistingMedia(mediaState.existing);
+				composeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				composeContentEl.focus();
+			} catch {
+				// Ignore — the edit_id param may be stale or invalid.
+			}
+		})();
+	}
+
 	// ---- edit button handler (delegated to timeline items container) ----
 
 	if (timelineItems) {
@@ -541,28 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	composeCancelBtn.addEventListener('click', resetCompose);
 
-	// ---- delete button handler ----
-
-	const deleteModalEl      = document.querySelector('#delete-status-modal');
-	const deleteConfirmBtn   = document.querySelector('#delete-status-confirm-btn');
-	const deleteModal        = deleteModalEl && window.bootstrap
-		? window.bootstrap.Modal.getOrCreateInstance(deleteModalEl)
-		: null;
-
-	let pendingDeleteId = null;
-
-	if (timelineItems && deleteModal) {
-		timelineItems.addEventListener('click', (event) => {
-			const deleteBtn = event.target.closest('.timeline__delete-btn');
-
-			if (!deleteBtn) {
-				return;
-			}
-
-			pendingDeleteId = parseInt(deleteBtn.dataset.statusId, 10);
-			deleteModal.show();
-		});
-	}
+	// ---- delete button confirm (home page — removes article and resets compose if needed) ----
 
 	if (deleteConfirmBtn && deleteModal) {
 		deleteConfirmBtn.addEventListener('click', async () => {
