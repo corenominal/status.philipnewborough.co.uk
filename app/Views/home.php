@@ -23,6 +23,10 @@
                         </div>
                     </form>
                 </div>
+                <nav class="timeline-page__subnav" aria-label="Section navigation">
+                    <a class="btn btn-sm btn-outline-primary active" href="<?= site_url() ?>"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> Timeline</a>
+                    <a class="btn btn-sm btn-outline-primary" href="<?= site_url('gallery') ?>"><i class="bi bi-images me-1" aria-hidden="true"></i> Gallery</a>
+                </nav>
             </div>
 
             <?php if (session()->get('is_admin')): ?>

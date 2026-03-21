@@ -30,6 +30,7 @@ class Filters extends BaseFilters
         'status/*',
         'timeline/load',
         'feed/rss',
+        'gallery',
         'metrics/receive',
         'cli/*',
         'api/*',
@@ -44,6 +45,7 @@ class Filters extends BaseFilters
         '/',
         'status/*',
         'timeline/load',
+        'gallery',
         'metrics/receive',
     ];
 

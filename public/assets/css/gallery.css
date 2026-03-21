@@ -1,0 +1,188 @@
+/* ============================================================
+   Gallery page — gallery.css
+   Masonry grid, shimmer placeholders, lazy-load fade-in,
+   hover overlay and focus ring for each media item.
+   ============================================================ */
+
+:root {
+    --gallery-gap: 0.75rem;
+    --gallery-col-min: 240px;
+    --gallery-radius: 0.75rem;
+    --shimmer-base: rgba(255, 255, 255, 0.05);
+    --shimmer-shine: rgba(255, 255, 255, 0.13);
+    --overlay-bg: rgba(0, 0, 0, 0.45);
+    --overlay-icon-color: rgba(255, 211, 0, 0.95);
+}
+
+/* ---- Page header ---- */
+
+.gallery-page__header {
+    margin-bottom: 1.75rem;
+}
+
+.gallery-page__title {
+    font-size: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.25rem;
+}
+
+.gallery-page__subtitle {
+    color: var(--bs-secondary-color, #adb5bd);
+    margin-bottom: 0;
+}
+
+.gallery-page__subnav {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.gallery-page__count {
+    font-size: 0.85rem;
+}
+
+/* ---- Masonry grid via CSS columns ---- */
+
+.gallery-grid {
+    columns: var(--gallery-col-min) auto;
+    column-gap: var(--gallery-gap);
+    orphans: 1;
+    widows: 1;
+}
+
+/* ---- Individual gallery item ---- */
+
+.gallery-item {
+    display: block;
+    break-inside: avoid;
+    margin-bottom: var(--gallery-gap);
+    text-decoration: none;
+    border-radius: var(--gallery-radius);
+    overflow: hidden;
+    /* GPU layer to avoid repaint during transforms */
+    will-change: transform;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-item:hover,
+.gallery-item:focus-visible {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    outline: none;
+}
+
+.gallery-item:focus-visible {
+    box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.5),
+        0 0 0 3px rgba(255, 211, 0, 0.6);
+}
+
+/* ---- Inner wrapper (holds aspect-ratio for shimmer reservation) ---- */
+
+.gallery-item__inner {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--gallery-radius);
+    /* aspect-ratio is set via inline style from PHP */
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* ---- Shimmer placeholder ---- */
+
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+
+.gallery-item__shimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        var(--shimmer-base) 25%,
+        var(--shimmer-shine) 50%,
+        var(--shimmer-base) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+    border-radius: var(--gallery-radius);
+    z-index: 1;
+    opacity: 1;
+    transition: opacity 0.35s ease;
+}
+
+.gallery-item__inner.is-loaded .gallery-item__shimmer {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ---- Lazy-loaded image ---- */
+
+.gallery-item__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    position: relative;
+    z-index: 2;
+    border-radius: var(--gallery-radius);
+}
+
+.gallery-item__inner.is-loaded .gallery-item__img {
+    opacity: 1;
+}
+
+/* ---- Hover / focus overlay ---- */
+
+.gallery-item__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--overlay-bg);
+    border-radius: var(--gallery-radius);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+    z-index: 3;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.gallery-item:hover .gallery-item__overlay,
+.gallery-item:focus-visible .gallery-item__overlay {
+    opacity: 1;
+}
+
+.gallery-item__overlay-icon {
+    font-size: 2.6rem;
+    color: var(--overlay-icon-color);
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+    transform: scale(0.85);
+    transition: transform 0.22s ease;
+}
+
+.gallery-item:hover .gallery-item__overlay-icon,
+.gallery-item:focus-visible .gallery-item__overlay-icon {
+    transform: scale(1);
+}
+
+/* ---- Reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+    .gallery-item__shimmer {
+        animation: none;
+        background: var(--shimmer-base);
+    }
+
+    .gallery-item,
+    .gallery-item__img,
+    .gallery-item__shimmer,
+    .gallery-item__overlay,
+    .gallery-item__overlay-icon {
+        transition: none;
+    }
+}

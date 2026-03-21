@@ -94,6 +94,19 @@ class Home extends BaseController
         $mastodonProfile = (string) config('Mastodon')->profile;
         $mastodonHandle  = (string) config('Mastodon')->account;
 
+        // Determine back-link from HTTP Referer.
+        $referer     = (string) $this->request->getHeaderLine('Referer');
+        $galleryUrl  = site_url('gallery');
+        $timelineUrl = site_url('/');
+
+        if (str_starts_with($referer, $galleryUrl)) {
+            $data['backUrl']   = $galleryUrl;
+            $data['backLabel'] = 'Back to gallery';
+        } else {
+            $data['backUrl']   = $timelineUrl;
+            $data['backLabel'] = 'Back to timeline';
+        }
+
         $data['css']             = ['home'];
         $data['js']              = ['home', 'shared/network-animation'];
         $data['title']           = 'Status';
