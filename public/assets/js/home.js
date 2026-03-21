@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const searchInput     = document.querySelector('#timeline-search');
 	const imageModalEl    = document.querySelector('#timeline-image-modal');
 	const imageModalImg   = document.querySelector('#timeline-image-modal-img');
+	const imageModalWrap  = document.querySelector('#timeline-image-modal-img-wrap');
 	const imageModalCapt  = document.querySelector('#timeline-image-modal-caption');
 	const imageModal      = imageModalEl && window.bootstrap
 		? window.bootstrap.Modal.getOrCreateInstance(imageModalEl)
@@ -133,18 +134,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				const fullSrc = clickedImage.currentSrc || clickedImage.src;
 				const altText = clickedImage.getAttribute('alt') || 'Full size image';
+				const imgWidth  = parseInt(clickedImage.dataset.width, 10) || 0;
+				const imgHeight = parseInt(clickedImage.dataset.height, 10) || 0;
 
-				imageModalImg.src    = fullSrc;
-				imageModalImg.alt    = altText;
+				imageModalImg.classList.remove('is-loaded');
+				imageModalImg.alt = altText;
+
+				if (imageModalWrap) {
+					imageModalWrap.classList.remove('has-loaded');
+					imageModalWrap.style.aspectRatio = '';
+					imageModalWrap.style.maxHeight = '';
+					imageModalWrap.style.maxWidth = '';
+
+					if (imgWidth > 0 && imgHeight > 0) {
+						imageModalWrap.style.aspectRatio = `${imgWidth} / ${imgHeight}`;
+
+						if (imgHeight > imgWidth) {
+							// Portrait: the image is height-constrained (max-height: 78vh).
+							// Without capping the wrapper, aspect-ratio makes it taller than the
+							// image because the wrapper is full modal width.
+							imageModalWrap.style.maxHeight = '78vh';
+							imageModalWrap.style.maxWidth = `calc(78vh * ${imgWidth} / ${imgHeight})`;
+						}
+					}
+				}
+
+				const markModalLoaded = () => {
+					imageModalImg.classList.add('is-loaded');
+					if (imageModalWrap) {
+						imageModalWrap.classList.add('has-loaded');
+					}
+				};
+
+				imageModalImg.addEventListener('load', markModalLoaded, { once: true });
+				imageModalImg.addEventListener('error', markModalLoaded, { once: true });
+
+				imageModalImg.src = fullSrc;
 				imageModalCapt.textContent = altText;
 
 				imageModal.show();
 			});
 
 			imageModalEl.addEventListener('hidden.bs.modal', () => {
-				imageModalImg.src  = '';
-				imageModalImg.alt  = '';
+				imageModalImg.src = '';
+				imageModalImg.alt = '';
+				imageModalImg.classList.remove('is-loaded');
 				imageModalCapt.textContent = '';
+
+				if (imageModalWrap) {
+					imageModalWrap.classList.remove('has-loaded');
+					imageModalWrap.style.aspectRatio = '';
+					imageModalWrap.style.maxHeight = '';
+					imageModalWrap.style.maxWidth = '';
+				}
 			});
 		}
 	}

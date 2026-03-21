@@ -53,6 +53,10 @@
                                     alt="<?= esc(! empty($media['description']) ? $media['description'] : 'Status media') ?>"
                                     loading="lazy"
                                     decoding="async"
+                                    <?php if (! empty($media['width']) && ! empty($media['height'])): ?>
+                                        data-width="<?= (int) $media['width'] ?>"
+                                        data-height="<?= (int) $media['height'] ?>"
+                                    <?php endif; ?>
                                 >
                             <?php endif; ?>
                             <?php if (! empty($media['description'])): ?>

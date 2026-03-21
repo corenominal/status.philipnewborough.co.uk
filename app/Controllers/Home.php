@@ -75,6 +75,8 @@ class Home extends BaseController
                     'description' => (string) ($mediaRow['description'] ?? ''),
                     'url'         => '/media/' . ($mediaRow['file_name'] ?? ''),
                     'mimeType'    => (string) ($mediaRow['mime_type'] ?? ''),
+                    'width'       => isset($mediaRow['width']) && $mediaRow['width'] !== null ? (int) $mediaRow['width'] : null,
+                    'height'      => isset($mediaRow['height']) && $mediaRow['height'] !== null ? (int) $mediaRow['height'] : null,
                 ];
             }
         }
@@ -197,10 +199,12 @@ class Home extends BaseController
 
             foreach ($mediaRows as $mediaRow) {
                 $mediaById[(int) $mediaRow['id']] = [
-                    'id' => (int) $mediaRow['id'],
+                    'id'          => (int) $mediaRow['id'],
                     'description' => (string) ($mediaRow['description'] ?? ''),
-                    'url' => '/media/' . ($mediaRow['file_name'] ?? ''),
-                    'mimeType' => (string) ($mediaRow['mime_type'] ?? ''),
+                    'url'         => '/media/' . ($mediaRow['file_name'] ?? ''),
+                    'mimeType'    => (string) ($mediaRow['mime_type'] ?? ''),
+                    'width'       => isset($mediaRow['width']) && $mediaRow['width'] !== null ? (int) $mediaRow['width'] : null,
+                    'height'      => isset($mediaRow['height']) && $mediaRow['height'] !== null ? (int) $mediaRow['height'] : null,
                 ];
             }
         }

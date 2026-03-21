@@ -23,7 +23,9 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body pt-2">
-                            <img id="timeline-image-modal-img" class="timeline-image-modal__image" src="" alt="">
+                            <div id="timeline-image-modal-img-wrap" class="timeline-image-modal__image-wrap">
+                                <img id="timeline-image-modal-img" class="timeline-image-modal__image" src="" alt="">
+                            </div>
                             <p id="timeline-image-modal-caption" class="timeline-image-modal__caption mb-0"></p>
                         </div>
                     </div>
