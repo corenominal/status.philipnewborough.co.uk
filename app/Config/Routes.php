@@ -12,6 +12,8 @@ $routes->get('/feed/rss', 'Feed::rss');
 
 // Admin routes
 $routes->get('/admin', 'Admin\Home::index');
+$routes->get('/admin/export', 'Admin\Export::index');
+$routes->get('/admin/export/(:segment)', 'Admin\Export::download/$1');
 
 // API routes
 $routes->match(['get', 'options'], '/api/test/ping', 'Api\Test::ping');

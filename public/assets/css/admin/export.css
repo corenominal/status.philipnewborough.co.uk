@@ -1,0 +1,78 @@
+/* ── Export icon ─────────────────────────────────────────────────────────── */
+
+.export__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.export__icon--purple {
+    background-color: rgba(166, 121, 210, 0.15);
+    color: #a679d2;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+
+.export__card {
+    transition: box-shadow 0.15s ease;
+}
+
+.export__card:hover {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ── AI prompt block ─────────────────────────────────────────────────────── */
+
+.export__prompt-block {
+    background-color: rgba(166, 121, 210, 0.08);
+    border: 1px solid rgba(166, 121, 210, 0.25);
+}
+
+.export__prompt-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: #a679d2;
+}
+
+.export__prompt-text {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: var(--bs-secondary-color);
+}
+
+.export__copy-btn {
+    font-size: 0.75rem;
+    background-color: rgba(166, 121, 210, 0.15);
+    color: #a679d2;
+    border: 1px solid rgba(166, 121, 210, 0.3);
+}
+
+.export__copy-btn:hover {
+    background-color: rgba(166, 121, 210, 0.25);
+    color: #c49ee0;
+}
+
+/* ── Purple badge ────────────────────────────────────────────────────────── */
+
+.export__badge--purple {
+    background-color: rgba(166, 121, 210, 0.2);
+    color: #c49ee0;
+}
+
+/* ── Purple button ───────────────────────────────────────────────────────── */
+
+.export__btn--purple {
+    background-color: rgba(166, 121, 210, 0.2);
+    color: #c49ee0;
+    border: 1px solid rgba(166, 121, 210, 0.35);
+}
+
+.export__btn--purple:hover {
+    background-color: rgba(166, 121, 210, 0.35);
+    color: #d8bef0;
+}

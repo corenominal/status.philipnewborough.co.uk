@@ -12,6 +12,7 @@ A self-hosted personal microblogging platform built with [CodeIgniter 4](https:/
 - **Mastodon sync** — Optionally cross-post new or edited statuses to a Mastodon instance via the Mastodon v1/v2 API using a bearer token.
 - **RSS feed** — `GET /feed/rss` exposes the latest 20 statuses as a standard RSS 2.0 feed.
 - **Admin dashboard** — Overview of headline stats (total statuses, media counts, Mastodon sync status, reply counts) plus a 12-month activity chart and recent activity list.
+- **Data export** — Export all statuses as JSON (full backup), SQL (portable database dump), or a plain-text file pre-loaded with an AI writing-style prompt.
 - **REST API** — Admin-protected JSON API for creating, reading, updating, and deleting statuses and media.
 - **Bulk import** — Spark CLI command to import statuses and media from a JSON export file.
 
@@ -40,6 +41,10 @@ A self-hosted personal microblogging platform built with [CodeIgniter 4](https:/
 | `GET` | `/logout` | Destroy session and redirect to auth service |
 | `GET` | `/unauthorised` | 403 page |
 | `GET` | `/admin` | Admin dashboard (requires admin session) |
+| `GET` | `/admin/export` | Data export page |
+| `GET` | `/admin/export/json` | Download all statuses as a JSON file |
+| `GET` | `/admin/export/sql` | Download all statuses as a SQL dump |
+| `GET` | `/admin/export/ai` | Download statuses as a plain-text file for AI analysis |
 | `POST` | `/api/statuses` | Create a status |
 | `GET` | `/api/statuses/:id` | Fetch a single status |
 | `PATCH` | `/api/statuses/:id` | Update a status |
@@ -126,6 +131,26 @@ The expected JSON structure is:
 ```
 
 Downloaded media is stored in `public/media/` using the media record's UUID as the filename.
+
+---
+
+## Data Export
+
+Three export formats are available from the admin dashboard under **Export Data**:
+
+| Format | URL | Output file |
+|---|---|---|
+| JSON | `/admin/export/json` | `statuses-YYYY-MM-DD.json` |
+| SQL | `/admin/export/sql` | `statuses-YYYY-MM-DD.sql` |
+| AI analysis | `/admin/export/ai` | `statuses-ai-YYYY-MM-DD.txt` |
+
+**JSON** — A full structured dump of all status records including every database field (content, HTML, media IDs, Mastodon metadata, timestamps). Useful for full backups or migrating to another system.
+
+**SQL** — A portable database dump containing a `CREATE TABLE` statement followed by all `INSERT` rows. Compatible with any MySQL / MariaDB instance.
+
+**AI analysis** — A plain-text file containing all status messages (HTML stripped), each separated by `---`. The file is prefixed with the following prompt, ready to paste directly into an AI assistant:
+
+> Analyze the following messages for my personal writing style. Look at sentence structure, level of formality, use of emojis, punctuation habits, and common vocabulary. Create a concise 'Style Guide' I can use for future prompts.
 
 ---
 
