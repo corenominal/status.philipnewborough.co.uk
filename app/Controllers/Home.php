@@ -28,7 +28,7 @@ class Home extends BaseController
         $mastodonEnabled = (new MastodonPoster())->isEnabled();
 
         // Array of javascript files to include
-        $data['js'] = ['home'];
+        $data['js'] = ['home', 'shared/network-animation'];
         // Array of CSS files to include
         $data['css'] = ['home'];
         // Set the page title
@@ -95,7 +95,7 @@ class Home extends BaseController
         $mastodonHandle  = (string) config('Mastodon')->account;
 
         $data['css']             = ['home'];
-        $data['js']              = ['home'];
+        $data['js']              = ['home', 'shared/network-animation'];
         $data['title']           = 'Status';
         $data['status']          = $status;
         $data['mastodonHandle']  = $mastodonHandle;
