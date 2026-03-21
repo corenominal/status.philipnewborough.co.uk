@@ -272,11 +272,10 @@ document.addEventListener('DOMContentLoaded', () => {
 			composeCharCount.classList.toggle('text-warning', remaining >= 0 && remaining <= 50);
 			composeCharCount.classList.toggle('text-secondary', remaining > 50);
 		}
+
 	};
 
 	composeContentEl.addEventListener('input', updateCharCount);
-
-	// Track media state --
 	// pendingUploads: array of { el, file, description } — not yet uploaded
 	// existingMedia:  array of { id, description, url, mime_type } — from DB
 	// removedMediaIds: set of integer IDs to drop on save
@@ -324,9 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			composeMastodonSwitch.checked = true;
 		}
 
-		if (saveDraftBtn) {
-			saveDraftBtn.classList.remove('d-none');
-		}
 	};
 
 	const setComposeLoading = (isLoading) => {
@@ -533,10 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			if (composeMastodonWrap) {
 				composeMastodonWrap.classList.add('d-none');
-			}
-
-			if (saveDraftBtn) {
-				saveDraftBtn.classList.add('d-none');
 			}
 
 			mediaState.existing = mediaItems.map((m) => ({ ...m }));
@@ -1046,9 +1038,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Save as Draft button
 	if (saveDraftBtn) {
-		saveDraftBtn.addEventListener('click', async () => {
+		saveDraftBtn.addEventListener('click', async (event) => {
+			event.preventDefault();
+
 			const content  = composeContentEl.value.trim();
 			const draftId  = composeDraftIdEl ? parseInt(composeDraftIdEl.value, 10) : 0;
+
+			if (content === '') {
+				setComposeMsg('Cannot save an empty draft.', 'error');
+				return;
+			}
 
 			saveDraftBtn.disabled = true;
 			setComposeMsg('Saving draft…', 'info');

@@ -78,7 +78,7 @@
                             <button type="button" class="btn btn-outline-secondary" id="compose-add-video-btn">
                                 <i class="bi bi-paperclip me-1" aria-hidden="true"></i>Media
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" id="compose-save-draft-btn">
+                            <button type="button" class="btn btn-outline-secondary" id="compose-save-draft-btn" formnovalidate>
                                 <i class="bi bi-journal-plus me-1" aria-hidden="true"></i>Draft
                             </button>
                             <?php if ($mastodonEnabled): ?>
