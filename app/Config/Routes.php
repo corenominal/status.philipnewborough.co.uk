@@ -22,6 +22,7 @@ $routes->match(['get', 'options'], '/api/test/ping', 'Api\Test::ping');
 
 // Status CRUD
 $routes->match(['post', 'options'], '/api/statuses', 'Api\Statuses::create');
+$routes->match(['get', 'options'], '/api/statuses/latest', 'Api\Statuses::latest');
 $routes->match(['get', 'options'], '/api/statuses/(:num)', 'Api\Statuses::get/$1');
 $routes->match(['patch', 'options'], '/api/statuses/(:num)', 'Api\Statuses::update/$1');
 $routes->match(['delete', 'options'], '/api/statuses/(:num)', 'Api\Statuses::delete/$1');

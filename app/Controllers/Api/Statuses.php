@@ -12,6 +12,53 @@ use Ramsey\Uuid\Uuid;
 class Statuses extends BaseController
 {
     /**
+     * GET /api/statuses/latest
+     * Fetch the most recent published statuses.
+     * Accepts optional query params: limit (1–100, default 20), offset (default 0).
+     */
+    public function latest(): ResponseInterface
+    {
+        $limit  = (int) ($this->request->getGet('limit') ?? 20);
+        $offset = (int) ($this->request->getGet('offset') ?? 0);
+
+        $limit  = max(1, min(100, $limit));
+        $offset = max(0, $offset);
+
+        $statusModel = new StatusModel();
+        $mediaModel  = new MediaModel();
+
+        $total    = $statusModel->countAllResults(false);
+        $statuses = $statusModel
+            ->orderBy('created_at', 'DESC')
+            ->findAll($limit, $offset);
+
+        $result = [];
+
+        foreach ($statuses as $status) {
+            $media    = $this->hydrateMedia($this->parseMediaIds($status['media_ids'] ?? null), $mediaModel);
+            $result[] = [
+                'uuid'         => $status['uuid'],
+                'content'      => $status['content'],
+                'content_html' => $status['content_html'],
+                'media'        => $media,
+                'mastodon_url' => $status['mastodon_url'],
+                'created_at'   => $status['created_at'],
+                'updated_at'   => $status['updated_at'],
+            ];
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $result,
+            'meta'   => [
+                'total'  => $total,
+                'limit'  => $limit,
+                'offset' => $offset,
+            ],
+        ]);
+    }
+
+    /**
      * GET /api/statuses/:id
      * Fetch a single status by ID (admin only).
      */
