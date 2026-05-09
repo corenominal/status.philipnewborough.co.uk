@@ -381,10 +381,96 @@ document.addEventListener('DOMContentLoaded', () => {
 			composeCharCount.classList.toggle('text-warning', remaining >= 0 && remaining <= 50);
 			composeCharCount.classList.toggle('text-secondary', remaining > 50);
 		}
-
+		updateAiBtn?.();
 	};
 
 	composeContentEl.addEventListener('input', updateCharCount);
+
+	// -------------------------------------------------------------------------
+	// AI rewrite
+	// -------------------------------------------------------------------------
+
+	const aiRewriteBtn       = document.querySelector('#ai-rewrite-btn');
+	const aiRewriteModalEl   = document.querySelector('#ai-rewrite-modal');
+	const aiRewriteModalBody = document.querySelector('#ai-rewrite-modal-body');
+	const aiRewriteModal     = aiRewriteModalEl && window.bootstrap
+		? window.bootstrap.Modal.getOrCreateInstance(aiRewriteModalEl)
+		: null;
+	const aiUrl = composeSection.dataset.aiUrl || '';
+
+	const updateAiBtn = () => {
+		if (aiRewriteBtn) {
+			aiRewriteBtn.disabled = !composeContentEl.value.trim();
+		}
+	};
+
+	if (aiRewriteBtn) {
+		aiRewriteBtn.addEventListener('click', async () => {
+			const text = composeContentEl.value.trim();
+			if (!text) return;
+
+			aiRewriteModalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-secondary"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Generating rewrites&hellip;</div>';
+			aiRewriteModal?.show();
+
+			try {
+				const response = await fetch(`${aiUrl}api/status/rewrite`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify({ text, model: 'gemma4:e4b', expand: true }),
+				});
+
+				if (!response.ok) {
+					throw new Error(`Request failed (${response.status})`);
+				}
+
+				const data     = await response.json();
+				const suggestions = data.suggestions || [];
+
+				if (suggestions.length === 0) {
+					const p = document.createElement('p');
+					p.className   = 'text-secondary';
+					p.textContent = 'No suggestions were returned.';
+					aiRewriteModalBody.innerHTML = '';
+					aiRewriteModalBody.appendChild(p);
+					return;
+				}
+
+				const list = document.createElement('ul');
+				list.className = 'list-group list-group-flush mb-3';
+
+				suggestions.forEach((suggestion) => {
+					const item = document.createElement('li');
+					item.className   = 'list-group-item list-group-item-action';
+					item.style.cursor = 'pointer';
+					item.textContent  = suggestion;
+					item.addEventListener('click', () => {
+						composeContentEl.value = suggestion;
+						updateCharCount();
+						aiRewriteModal?.hide();
+					});
+					list.appendChild(item);
+				});
+
+				const hint = document.createElement('p');
+				hint.className   = 'text-secondary small mb-0';
+				hint.textContent = 'Click a suggestion to replace your current status.';
+
+				aiRewriteModalBody.innerHTML = '';
+				aiRewriteModalBody.appendChild(list);
+				aiRewriteModalBody.appendChild(hint);
+
+			} catch (err) {
+				const p = document.createElement('p');
+				p.className   = 'text-danger mb-0';
+				p.textContent = `Could not fetch rewrites: ${err.message}`;
+				aiRewriteModalBody.innerHTML = '';
+				aiRewriteModalBody.appendChild(p);
+			}
+		});
+	}
 	// pendingUploads: array of { el, file, description } — not yet uploaded
 	// existingMedia:  array of { id, description, url, mime_type } — from DB
 	// removedMediaIds: set of integer IDs to drop on save

@@ -31,7 +31,7 @@
             </div>
 
             <?php if (session()->get('is_admin')): ?>
-                <section class="timeline-compose mb-4" aria-label="Create or edit status" id="timeline-compose">
+                <section class="timeline-compose mb-4" aria-label="Create or edit status" id="timeline-compose" data-ai-url="<?= esc(config('Urls')->ai) ?>">
                     <header class="timeline-compose__header d-flex align-items-center justify-content-between mb-3">
                         <h2 class="timeline-compose__title mb-0" id="compose-form-title">New Status</h2>
                         <div class="d-flex align-items-center gap-2">
@@ -46,6 +46,14 @@
                                 <i class="bi bi-journal-text me-1" aria-hidden="true"></i>Drafts <span class="badge text-bg-secondary ms-1" id="drafts-count-badge"><?= (int) $draftCount ?></span>
                             </button>
                             <?php endif; ?>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                id="ai-rewrite-btn"
+                                disabled
+                            >
+                                <i class="bi bi-stars me-1" aria-hidden="true"></i>AI
+                            </button>
                             <button
                                 type="button"
                                 class="btn btn-sm btn-outline-secondary d-none"
@@ -167,6 +175,22 @@
                         </div>
                         <div class="modal-body" id="drafts-modal-body">
                             <p class="text-secondary">Loading drafts&hellip;</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="ai-rewrite-modal" tabindex="-1" aria-labelledby="ai-rewrite-modal-label" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="ai-rewrite-modal-label">
+                                <i class="bi bi-stars me-2" aria-hidden="true"></i>AI Rewrites
+                            </h2>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="ai-rewrite-modal-body">
+                            <p class="text-secondary">Generating rewrites&hellip;</p>
                         </div>
                     </div>
                 </div>

@@ -7,6 +7,7 @@ use CodeIgniter\Config\BaseConfig;
 class Urls extends BaseConfig
 {
     public $tld = '';
+    public $ai = '';
     public $startpage = '';
     public $appmenu = '';
     public $auth = '';
