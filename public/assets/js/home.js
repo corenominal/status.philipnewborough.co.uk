@@ -589,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			dropZone.classList.add('is-invalid');
 			label.textContent = 'Unsupported file type. Allowed: JPEG, PNG, GIF, WebP, MP4.';
 			entry.file = null;
+			if (entry.aiAltBtn) entry.aiAltBtn.classList.add('d-none');
 			return;
 		}
 
@@ -607,11 +608,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			video.classList.remove('d-none');
 			img.src = '';
 			img.classList.add('d-none');
+			if (entry.aiAltBtn) entry.aiAltBtn.classList.add('d-none');
 		} else {
 			img.src = objectUrl;
 			img.classList.remove('d-none');
 			video.src = '';
 			video.classList.add('d-none');
+			if (entry.aiAltBtn) entry.aiAltBtn.classList.remove('d-none');
 		}
 	};
 
@@ -627,7 +630,12 @@ document.addEventListener('DOMContentLoaded', () => {
 			</div>
 			<div class="mb-2">
 				<label class="form-label form-label-sm timeline-compose__label mb-1">Description / alt text <span class="text-danger" aria-hidden="true">*</span></label>
-				<input type="text" maxlength="255" required class="form-control form-control-sm timeline-compose__desc-input" placeholder="Describe the media (used as alt text)">
+				<div class="input-group input-group-sm">
+					<input type="text" maxlength="255" required class="form-control timeline-compose__desc-input" placeholder="Describe the media (used as alt text)">
+					<button type="button" class="btn btn-outline-secondary timeline-compose__ai-alt-btn d-none" aria-label="Generate alt text with AI" title="Generate alt text with AI">
+						<i class="bi bi-stars" aria-hidden="true"></i>
+					</button>
+				</div>
 			</div>
 			<div class="timeline-compose__preview-wrap">
 				<img class="timeline-compose__image-preview d-none w-100 rounded mb-2" src="" alt="">
@@ -639,9 +647,10 @@ document.addEventListener('DOMContentLoaded', () => {
 		const fileInput = wrapper.querySelector('.timeline-compose__drop-input');
 		const previewEl = wrapper.querySelector('.timeline-compose__preview-wrap');
 		const descInput = wrapper.querySelector('.timeline-compose__desc-input');
+		const aiAltBtn  = wrapper.querySelector('.timeline-compose__ai-alt-btn');
 		const removeBtn = wrapper.querySelector('.timeline-compose__remove-pending');
 
-		const entry = { el: wrapper, file: null, descInput };
+		const entry = { el: wrapper, file: null, descInput, aiAltBtn };
 		mediaState.pending.push(entry);
 
 		// Click / keyboard opens the hidden file input
@@ -683,6 +692,55 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (descInput.value.trim() !== '') {
 				descInput.classList.remove('is-invalid');
 			}
+		});
+
+		aiAltBtn.addEventListener('click', async () => {
+			if (!entry.file) return;
+
+			const icon = '<i class="bi bi-stars" aria-hidden="true"></i>';
+			aiAltBtn.disabled = true;
+			aiAltBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+			try {
+				const base64 = await new Promise((resolve, reject) => {
+					const reader = new FileReader();
+					reader.onload  = () => resolve(reader.result.split(',')[1]);
+					reader.onerror = reject;
+					reader.readAsDataURL(entry.file);
+				});
+
+				const response = await fetch(`${aiUrl}api/images/alttext`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify({ image: base64, model: 'gemma4:e4b' }),
+				});
+
+				if (!response.ok) {
+					throw new Error(`Request failed (${response.status})`);
+				}
+
+				const data = await response.json();
+
+				if (data.alt_text) {
+					descInput.value = data.alt_text;
+					descInput.classList.remove('is-invalid');
+				}
+			} catch (err) {
+				aiAltBtn.innerHTML = '<i class="bi bi-exclamation-triangle" aria-hidden="true"></i>';
+				setTimeout(() => {
+					aiAltBtn.innerHTML = icon;
+					aiAltBtn.disabled  = false;
+				}, 2000);
+				// eslint-disable-next-line no-console
+				console.error(err);
+				return;
+			}
+
+			aiAltBtn.innerHTML = icon;
+			aiAltBtn.disabled  = false;
 		});
 
 		return wrapper;
