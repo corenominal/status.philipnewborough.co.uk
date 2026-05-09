@@ -141,3 +141,6 @@ _modules/*
 
 /results/
 /phpunit*.xml
+
+# AI prompts history file
+PROMPTS.md
