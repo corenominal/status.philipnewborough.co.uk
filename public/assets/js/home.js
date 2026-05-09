@@ -398,6 +398,83 @@ document.addEventListener('DOMContentLoaded', () => {
 		: null;
 	const aiUrl = composeSection.dataset.aiUrl || '';
 
+	const MODEL_STORAGE_KEY   = 'ollama_selected_model';
+	const getSelectedModel    = () => localStorage.getItem(MODEL_STORAGE_KEY) || '';
+	const setSelectedModel    = (m) => localStorage.setItem(MODEL_STORAGE_KEY, m);
+
+	const aiSettingsBtn       = document.querySelector('#ai-settings-btn');
+	const aiSettingsModalEl   = document.querySelector('#ai-settings-modal');
+	const aiSettingsModalBody = document.querySelector('#ai-settings-modal-body');
+	const aiSettingsModal     = aiSettingsModalEl && window.bootstrap
+		? window.bootstrap.Modal.getOrCreateInstance(aiSettingsModalEl)
+		: null;
+
+	let availableModels = [];
+
+	const renderModelList = () => {
+		if (!aiSettingsModalBody) return;
+
+		if (availableModels.length === 0) {
+			aiSettingsModalBody.innerHTML = '<p class="text-secondary mb-0">No models available.</p>';
+			return;
+		}
+
+		const selectedModel = getSelectedModel();
+		const list = document.createElement('ul');
+		list.className = 'list-group list-group-flush';
+
+		availableModels.forEach((model) => {
+			const item = document.createElement('li');
+			item.className    = 'list-group-item list-group-item-action d-flex align-items-center justify-content-between';
+			item.style.cursor = 'pointer';
+			item.innerHTML    = `<span>${model}</span>${model === selectedModel ? '<i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>' : ''}`;
+			item.addEventListener('click', () => {
+				setSelectedModel(model);
+				renderModelList();
+			});
+			list.appendChild(item);
+		});
+
+		const hint = document.createElement('p');
+		hint.className   = 'text-secondary small mt-3 mb-0';
+		hint.textContent = 'The selected model will be used for all AI actions.';
+
+		aiSettingsModalBody.innerHTML = '';
+		aiSettingsModalBody.appendChild(list);
+		aiSettingsModalBody.appendChild(hint);
+	};
+
+	(async () => {
+		try {
+			const response = await fetch(`${aiUrl}api/ollama/list`, {
+				method: 'GET',
+				headers: { ...authHeaders(), Accept: 'application/json' },
+			});
+
+			if (!response.ok) return;
+
+			const data = await response.json();
+			availableModels = data.models || [];
+
+			if (availableModels.length > 0) {
+				if (!getSelectedModel() || !availableModels.includes(getSelectedModel())) {
+					setSelectedModel(availableModels[0]);
+				}
+
+				if (aiSettingsBtn) {
+					aiSettingsBtn.disabled = false;
+				}
+			}
+		} catch { /* ignore — fall back to stored or default model */ }
+	})();
+
+	if (aiSettingsBtn) {
+		aiSettingsBtn.addEventListener('click', () => {
+			renderModelList();
+			aiSettingsModal?.show();
+		});
+	}
+
 	const updateAiBtn = () => {
 		if (aiRewriteBtn) {
 			aiRewriteBtn.disabled = !composeContentEl.value.trim();
@@ -426,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					'Content-Type': 'application/json',
 					...authHeaders(),
 				},
-				body: JSON.stringify({ text, model: 'gemma4:31b-cloud', expand: true }),
+				body: JSON.stringify({ text, model: getSelectedModel() || 'gemma4:e4b', expand: true }),
 			});
 
 			if (!response.ok) {
@@ -736,7 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						'Content-Type': 'application/json',
 						...authHeaders(),
 					},
-					body: JSON.stringify({ image: base64, model: 'gemma4:31b-cloud' }),
+					body: JSON.stringify({ image: base64, model: getSelectedModel() || 'gemma4:e4b' }),
 				});
 
 				if (!response.ok) {

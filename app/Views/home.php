@@ -46,14 +46,25 @@
                                 <i class="bi bi-journal-text me-1" aria-hidden="true"></i>Drafts <span class="badge text-bg-secondary ms-1" id="drafts-count-badge"><?= (int) $draftCount ?></span>
                             </button>
                             <?php endif; ?>
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-outline-secondary"
-                                id="ai-rewrite-btn"
-                                disabled
-                            >
-                                <i class="bi bi-stars me-1" aria-hidden="true"></i>AI
-                            </button>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="AI actions">
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="ai-rewrite-btn"
+                                    disabled
+                                >
+                                    <i class="bi bi-stars me-1" aria-hidden="true"></i>AI
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    id="ai-settings-btn"
+                                    title="AI model settings"
+                                    disabled
+                                >
+                                    <i class="bi bi-gear" aria-hidden="true"></i>
+                                </button>
+                            </div>
                             <button
                                 type="button"
                                 class="btn btn-sm btn-outline-secondary d-none"
@@ -191,6 +202,22 @@
                         </div>
                         <div class="modal-body" id="ai-rewrite-modal-body">
                             <p class="text-secondary">Generating rewrites&hellip;</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="ai-settings-modal" tabindex="-1" aria-labelledby="ai-settings-modal-label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title fs-5" id="ai-settings-modal-label">
+                                <i class="bi bi-gear me-2" aria-hidden="true"></i>AI Model
+                            </h2>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="ai-settings-modal-body">
+                            <p class="text-secondary">Loading models&hellip;</p>
                         </div>
                     </div>
                 </div>
