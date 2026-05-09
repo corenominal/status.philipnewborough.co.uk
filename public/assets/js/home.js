@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						'Content-Type': 'application/json',
 						...authHeaders(),
 					},
-					body: JSON.stringify({ text, model: 'gemma4:e4b', expand: true }),
+					body: JSON.stringify({ text, model: 'gemma4:31b-cloud', expand: true }),
 				});
 
 				if (!response.ok) {
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						'Content-Type': 'application/json',
 						...authHeaders(),
 					},
-					body: JSON.stringify({ image: base64, model: 'gemma4:e4b' }),
+					body: JSON.stringify({ image: base64, model: 'gemma4:31b-cloud' }),
 				});
 
 				if (!response.ok) {
