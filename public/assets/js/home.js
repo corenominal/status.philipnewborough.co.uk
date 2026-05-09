@@ -404,71 +404,92 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	};
 
-	if (aiRewriteBtn) {
-		aiRewriteBtn.addEventListener('click', async () => {
-			const text = composeContentEl.value.trim();
-			if (!text) return;
+	const fetchAiRewrites = async () => {
+		const text = composeContentEl.value.trim();
+		if (!text) return;
 
-			aiRewriteModalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-secondary"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Generating rewrites&hellip;</div>';
-			aiRewriteModal?.show();
+		aiRewriteModalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-secondary"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Generating rewrites&hellip;</div>';
 
-			try {
-				const response = await fetch(`${aiUrl}api/status/rewrite`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						...authHeaders(),
-					},
-					body: JSON.stringify({ text, model: 'gemma4:31b-cloud', expand: true }),
-				});
+		const buildRetryBtn = () => {
+			const btn = document.createElement('button');
+			btn.type      = 'button';
+			btn.className = 'btn btn-sm btn-outline-secondary';
+			btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Try again';
+			btn.addEventListener('click', fetchAiRewrites);
+			return btn;
+		};
 
-				if (!response.ok) {
-					throw new Error(`Request failed (${response.status})`);
-				}
+		try {
+			const response = await fetch(`${aiUrl}api/status/rewrite`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					...authHeaders(),
+				},
+				body: JSON.stringify({ text, model: 'gemma4:31b-cloud', expand: true }),
+			});
 
-				const data     = await response.json();
-				const suggestions = data.suggestions || [];
-
-				if (suggestions.length === 0) {
-					const p = document.createElement('p');
-					p.className   = 'text-secondary';
-					p.textContent = 'No suggestions were returned.';
-					aiRewriteModalBody.innerHTML = '';
-					aiRewriteModalBody.appendChild(p);
-					return;
-				}
-
-				const list = document.createElement('ul');
-				list.className = 'list-group list-group-flush mb-3';
-
-				suggestions.forEach((suggestion) => {
-					const item = document.createElement('li');
-					item.className   = 'list-group-item list-group-item-action';
-					item.style.cursor = 'pointer';
-					item.textContent  = suggestion;
-					item.addEventListener('click', () => {
-						composeContentEl.value = suggestion;
-						updateCharCount();
-						aiRewriteModal?.hide();
-					});
-					list.appendChild(item);
-				});
-
-				const hint = document.createElement('p');
-				hint.className   = 'text-secondary small mb-0';
-				hint.textContent = 'Click a suggestion to replace your current status.';
-
-				aiRewriteModalBody.innerHTML = '';
-				aiRewriteModalBody.appendChild(list);
-				aiRewriteModalBody.appendChild(hint);
-
-			} catch (err) {
-				const p = document.createElement('p');
-				p.className   = 'text-danger mb-0';
-				p.textContent = `Could not fetch rewrites: ${err.message}`;
-				aiRewriteModalBody.innerHTML = '';
-				aiRewriteModalBody.appendChild(p);
+			if (!response.ok) {
+				throw new Error(`Request failed (${response.status})`);
 			}
+
+			const data        = await response.json();
+			const suggestions = data.suggestions || [];
+
+			aiRewriteModalBody.innerHTML = '';
+
+			if (suggestions.length === 0) {
+				const p = document.createElement('p');
+				p.className   = 'text-secondary mb-3';
+				p.textContent = 'No suggestions were returned.';
+				aiRewriteModalBody.appendChild(p);
+				aiRewriteModalBody.appendChild(buildRetryBtn());
+				return;
+			}
+
+			const list = document.createElement('ul');
+			list.className = 'list-group list-group-flush mb-3';
+
+			suggestions.forEach((suggestion) => {
+				const item = document.createElement('li');
+				item.className    = 'list-group-item list-group-item-action';
+				item.style.cursor = 'pointer';
+				item.textContent  = suggestion;
+				item.addEventListener('click', () => {
+					composeContentEl.value = suggestion;
+					updateCharCount();
+					aiRewriteModal?.hide();
+				});
+				list.appendChild(item);
+			});
+
+			const footer = document.createElement('div');
+			footer.className = 'd-flex align-items-center justify-content-between gap-2';
+
+			const hint = document.createElement('p');
+			hint.className   = 'text-secondary small mb-0';
+			hint.textContent = 'Click a suggestion to replace your current status.';
+
+			footer.appendChild(hint);
+			footer.appendChild(buildRetryBtn());
+
+			aiRewriteModalBody.appendChild(list);
+			aiRewriteModalBody.appendChild(footer);
+
+		} catch (err) {
+			const p = document.createElement('p');
+			p.className   = 'text-danger mb-3';
+			p.textContent = `Could not fetch rewrites: ${err.message}`;
+			aiRewriteModalBody.innerHTML = '';
+			aiRewriteModalBody.appendChild(p);
+			aiRewriteModalBody.appendChild(buildRetryBtn());
+		}
+	};
+
+	if (aiRewriteBtn) {
+		aiRewriteBtn.addEventListener('click', () => {
+			aiRewriteModal?.show();
+			fetchAiRewrites();
 		});
 	}
 	// pendingUploads: array of { el, file, description } — not yet uploaded
