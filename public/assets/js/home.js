@@ -390,13 +390,18 @@ document.addEventListener('DOMContentLoaded', () => {
 	// AI rewrite
 	// -------------------------------------------------------------------------
 
-	const aiRewriteBtn       = document.querySelector('#ai-rewrite-btn');
-	const aiRewriteModalEl   = document.querySelector('#ai-rewrite-modal');
-	const aiRewriteModalBody = document.querySelector('#ai-rewrite-modal-body');
-	const aiRewriteModal     = aiRewriteModalEl && window.bootstrap
-		? window.bootstrap.Modal.getOrCreateInstance(aiRewriteModalEl)
-		: null;
+	const aiRewriteBtn      = document.querySelector('#ai-rewrite-btn');
+	const aiRewriteCard     = document.querySelector('#ai-rewrite-card');
+	const aiRewriteCardBody = document.querySelector('#ai-rewrite-card-body');
+	const aiRewriteDismiss  = document.querySelector('#ai-rewrite-dismiss');
 	const aiUrl = composeSection.dataset.aiUrl || '';
+
+	const showRewriteCard = () => aiRewriteCard?.classList.remove('d-none');
+	const hideRewriteCard = () => aiRewriteCard?.classList.add('d-none');
+
+	if (aiRewriteDismiss) {
+		aiRewriteDismiss.addEventListener('click', hideRewriteCard);
+	}
 
 	const MODEL_STORAGE_KEY   = 'ollama_selected_model';
 	const getSelectedModel    = () => localStorage.getItem(MODEL_STORAGE_KEY) || '';
@@ -481,18 +486,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	};
 
-	const fetchAiRewrites = async () => {
-		const text = composeContentEl.value.trim();
+	const fetchAiRewrites = async (sourceText) => {
+		const text = sourceText || composeContentEl.value.trim();
 		if (!text) return;
 
-		aiRewriteModalBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-secondary"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Generating rewrites&hellip;</div>';
+		aiRewriteCardBody.innerHTML = '<div class="d-flex align-items-center gap-2 text-secondary p-3"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Generating rewrites&hellip;</div>';
+		showRewriteCard();
 
 		const buildRetryBtn = () => {
 			const btn = document.createElement('button');
 			btn.type      = 'button';
 			btn.className = 'btn btn-sm btn-outline-secondary';
 			btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Try again';
-			btn.addEventListener('click', fetchAiRewrites);
+			btn.addEventListener('click', () => fetchAiRewrites(text));
 			return btn;
 		};
 
@@ -513,61 +519,81 @@ document.addEventListener('DOMContentLoaded', () => {
 			const data        = await response.json();
 			const suggestions = data.suggestions || [];
 
-			aiRewriteModalBody.innerHTML = '';
+			aiRewriteCardBody.innerHTML = '';
 
 			if (suggestions.length === 0) {
+				const wrap = document.createElement('div');
+				wrap.className = 'p-3 d-flex align-items-center gap-2';
 				const p = document.createElement('p');
-				p.className   = 'text-secondary mb-3';
+				p.className   = 'text-secondary mb-0 flex-grow-1';
 				p.textContent = 'No suggestions were returned.';
-				aiRewriteModalBody.appendChild(p);
-				aiRewriteModalBody.appendChild(buildRetryBtn());
+				wrap.appendChild(p);
+				wrap.appendChild(buildRetryBtn());
+				aiRewriteCardBody.appendChild(wrap);
 				return;
 			}
 
 			const list = document.createElement('ul');
-			list.className = 'list-group list-group-flush mb-3';
+			list.className = 'list-group list-group-flush';
 
 			suggestions.forEach((suggestion) => {
 				const item = document.createElement('li');
-				item.className    = 'list-group-item list-group-item-action';
-				item.style.cursor = 'pointer';
-				item.textContent  = suggestion;
-				item.addEventListener('click', () => {
+				item.className = 'list-group-item d-flex align-items-start gap-2 py-2';
+
+				const label = document.createElement('span');
+				label.className   = 'flex-grow-1 small';
+				label.textContent = suggestion;
+
+				const useBtn = document.createElement('button');
+				useBtn.type      = 'button';
+				useBtn.className = 'btn btn-sm btn-outline-primary flex-shrink-0';
+				useBtn.innerHTML = '<i class="bi bi-check-lg me-1" aria-hidden="true"></i>Use';
+				useBtn.addEventListener('click', () => {
 					composeContentEl.value = suggestion;
 					updateCharCount();
-					aiRewriteModal?.hide();
+					hideRewriteCard();
 				});
+
+				const drillBtn = document.createElement('button');
+				drillBtn.type      = 'button';
+				drillBtn.className = 'btn btn-sm btn-outline-secondary flex-shrink-0';
+				drillBtn.innerHTML = '<i class="bi bi-arrow-return-right me-1" aria-hidden="true"></i>Drill down';
+				drillBtn.addEventListener('click', () => fetchAiRewrites(suggestion));
+
+				item.appendChild(label);
+				item.appendChild(useBtn);
+				item.appendChild(drillBtn);
 				list.appendChild(item);
 			});
 
 			const footer = document.createElement('div');
-			footer.className = 'd-flex align-items-center justify-content-between gap-2';
+			footer.className = 'd-flex align-items-center justify-content-between gap-2 p-2 border-top';
 
 			const hint = document.createElement('p');
 			hint.className   = 'text-secondary small mb-0';
-			hint.textContent = 'Click a suggestion to replace your current status.';
+			hint.textContent = sourceText ? `Rewrites of: “${sourceText.length > 60 ? sourceText.slice(0, 60) + '…' : sourceText}”` : 'Rewrites of your current status.';
 
 			footer.appendChild(hint);
 			footer.appendChild(buildRetryBtn());
 
-			aiRewriteModalBody.appendChild(list);
-			aiRewriteModalBody.appendChild(footer);
+			aiRewriteCardBody.appendChild(list);
+			aiRewriteCardBody.appendChild(footer);
 
 		} catch (err) {
+			const wrap = document.createElement('div');
+			wrap.className = 'p-3 d-flex align-items-center gap-2';
 			const p = document.createElement('p');
-			p.className   = 'text-danger mb-3';
+			p.className   = 'text-danger mb-0 flex-grow-1';
 			p.textContent = `Could not fetch rewrites: ${err.message}`;
-			aiRewriteModalBody.innerHTML = '';
-			aiRewriteModalBody.appendChild(p);
-			aiRewriteModalBody.appendChild(buildRetryBtn());
+			aiRewriteCardBody.innerHTML = '';
+			wrap.appendChild(p);
+			wrap.appendChild(buildRetryBtn());
+			aiRewriteCardBody.appendChild(wrap);
 		}
 	};
 
 	if (aiRewriteBtn) {
-		aiRewriteBtn.addEventListener('click', () => {
-			aiRewriteModal?.show();
-			fetchAiRewrites();
-		});
+		aiRewriteBtn.addEventListener('click', () => fetchAiRewrites());
 	}
 	// pendingUploads: array of { el, file, description } — not yet uploaded
 	// existingMedia:  array of { id, description, url, mime_type } — from DB

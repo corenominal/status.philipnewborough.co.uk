@@ -88,6 +88,15 @@
                             <div class="d-flex justify-content-end mt-1">
                                 <span id="compose-char-count" class="small text-secondary">500</span>
                             </div>
+                            <div class="d-none mt-2" id="ai-rewrite-card">
+                                <div class="card">
+                                    <div class="card-header d-flex align-items-center justify-content-between py-2">
+                                        <span class="small fw-semibold"><i class="bi bi-stars me-1" aria-hidden="true"></i>AI Suggestions</span>
+                                        <button type="button" class="btn-close btn-close-white" id="ai-rewrite-dismiss" aria-label="Dismiss suggestions"></button>
+                                    </div>
+                                    <div class="card-body p-0" id="ai-rewrite-card-body"></div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="timeline-compose__existing-media d-none mb-3" id="compose-existing-media">
@@ -191,23 +200,7 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="ai-rewrite-modal" tabindex="-1" aria-labelledby="ai-rewrite-modal-label" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2 class="modal-title fs-5" id="ai-rewrite-modal-label">
-                                <i class="bi bi-stars me-2" aria-hidden="true"></i>AI Rewrites
-                            </h2>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body" id="ai-rewrite-modal-body">
-                            <p class="text-secondary">Generating rewrites&hellip;</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="ai-settings-modal" tabindex="-1" aria-labelledby="ai-settings-modal-label" aria-hidden="true">
+<div class="modal fade" id="ai-settings-modal" tabindex="-1" aria-labelledby="ai-settings-modal-label" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
